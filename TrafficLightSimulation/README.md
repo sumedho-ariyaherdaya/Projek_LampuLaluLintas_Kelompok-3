@@ -32,3 +32,46 @@ TrafficLightSimulation/
 ## Adding dashboard controls later
 
 `Main.java` places the simulation panel at the upper-left and sizes it to about 70% of the screen width and 60% of its height. The surrounding window area is intentionally left open. Replace the simple `FlowLayout` content panel with a `BorderLayout` or `GridBagLayout` when adding counters, buttons, or status panels. Adjust `canvasWidth` and `canvasHeight` in `Main.java` to change the simulation footprint.
+
+
+## Struktur tampilan dan logika (tahap 1: hanya tampilan)
+
+```text
+src/main/java/com/example/trafficlightsim/
+├── Main.java               (tidak diubah)
+├── SimulationPanel.java    (tidak diubah)  gambar jalan, lampu, kendaraan
+├── Vehicle.java            (tidak diubah)
+├── MusicPlayer.java        (tidak diubah)
+├── DashboardFrame.java     jendela utama, CardLayout: layar Simulasi / Daftar Pelanggaran
+├── model/                  data murni: Jalur, JenisKendaraan, SignalState, ViolationType, ViolationRecord
+├── view/                   semua tampilan
+│   ├── Theme.java              warna, font, gaya input
+│   ├── DashboardPanel.java     layar utama (menempatkan SimulationPanel)
+│   ├── MetricsPanel.java       Live Metrics + hitung mundur "Berikutnya"
+│   ├── TotalViolationCard.java
+│   ├── VehicleStatusPanel.java
+│   ├── ControlBar.java         Lihat daftar / Input data / Berhenti / Mulai
+│   ├── ViolationListPanel.java + ViolationTableModel.java   Daftar Pelanggaran
+│   ├── InputDataPanel.java + InputDataDialog.java            form Input Data
+│   ├── ReceiptPanel.java + ReceiptDialog.java                Bukti Pelanggaran
+│   ├── PreviewData.java        data contoh (hapus nanti)
+│   ├── ViewPreview.java        Run File untuk melihat daftar, form, dan bukti
+│   └── component/              RoundedPanel, RoundedButton, StatusLamp, HeaderBar
+├── controller/             KERANGKA kosong: Navigation, Simulation, Violation, Print
+├── service/                KERANGKA kosong: ViolationLogService, LogPrinter
+└── util/Rupiah.java        format Rp300.000
+```
+
+Semua tombol dan kolom sudah tersedia lewat getter (mis. `ControlBar.getStartButton()`), jadi
+controller nanti cukup memasang listener tanpa mengubah tampilan.
+
+### Menyambungkan ke simulasi (tahap berikutnya)
+
+Beberapa hal di kode simulasi perlu dibuka sedikit agar controller bisa membacanya:
+
+- `Vehicle` dan enum di dalamnya masih package-private. Jika controller berada di subpackage, jadikan `public`.
+- Fase lampu (`phase`, `phaseStarted`) di `SimulationPanel` masih `private`; perlu getter untuk mengisi `MetricsPanel`
+  (warna per jalur dan hitung mundur). Urutan `Jalur` sudah sama dengan `Vehicle.Direction`.
+- `SimulationPanel` langsung menjalankan timer dan musik di konstruktor, jadi Mulai/Berhenti butuh metode `start()` / `stop()`.
+- Pelanggaran di `Vehicle.violations` memakai teks yang sama dengan `ViolationType.getLabel()`;
+  gunakan `ViolationType.fromLabel(...)` untuk mengubahnya menjadi `ViolationRecord`.

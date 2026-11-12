@@ -68,11 +68,17 @@ public class ViolationController {
         else if (chosen.isEmpty()) error = "Pilih minimal satu pelanggaran.";
         else if (jalur == null) error = "Jalur belum dipilih.";
         else if (kind == null) error = "Jenis kendaraan belum dipilih.";
+        
+        // Validasi kesesuaian jenis kendaraan dan pelanggaran
+        else if (kind == JenisKendaraan.MOBIL && chosen.contains(ViolationType.NO_HELMET)) {
+            error = "Validasi Gagal: Kendaraan roda empat (Mobil) tidak diwajibkan menggunakan helm!";
+        }
+
         if (error != null) {
-            JOptionPane.showMessageDialog(dialog, error, "Data belum lengkap", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(dialog, error, "Peringatan Pelanggaran", JOptionPane.WARNING_MESSAGE);
             return false;
         }
-        if (plate.isEmpty()) plate = "-"; // kendaraan memang tanpa plat (pelanggaran "Tidak ada plat nomor")
+        if (plate.isEmpty()) plate = "-"; // kendaraan memang tanpa plat
 
         service.add(new ViolationRecord(plate, chosen, LocalDateTime.now(), jalur, kind));
         refreshViews();

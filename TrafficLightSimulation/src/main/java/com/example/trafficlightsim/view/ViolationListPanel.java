@@ -23,6 +23,8 @@ public class ViolationListPanel extends JPanel {
     private final RoundedButton backButton = RoundedButton.onDark("Kembali ke simulasi");
     private Consumer<ViolationRecord> onPrintRow;
 
+    private TableRowSorter<ViolationTableModel> rowSorter;
+    private final java.util.List<TableColumn> daftarSemuaKolom = new java.util.ArrayList<>();
     public ViolationListPanel() {
         super(new BorderLayout());
         setBackground(Theme.BACKGROUND);
@@ -36,14 +38,84 @@ public class ViolationListPanel extends JPanel {
         body.add(buildToolbar(), BorderLayout.NORTH);
         body.add(buildTableCard(), BorderLayout.CENTER);
         add(body, BorderLayout.CENTER);
+
+        // --- AKTIFKAN ROW SORTER UNTUK PENCARIAN & SORTING ---
+        rowSorter = new TableRowSorter<>(tableModel);
+        table.setRowSorter(rowSorter);
+
+        // Simpan referensi kolom asli
+        daftarSemuaKolom.clear();
+        TableColumnModel colModel = table.getColumnModel();
+        for (int i = 0; i < colModel.getColumnCount(); i++) {
+            daftarSemuaKolom.add(colModel.getColumn(i));
+        }
+
+        // Listener Tombol Cari
+        searchButton.addActionListener(e -> eksekusiPencarian());
+        
+        // Listener Kotak Filter Kolom
+        filterBox.addActionListener(e -> eksekusiFilterKolom());
     }
+
+    // Method Logika Pencarian
+    private void eksekusiPencarian() {
+        String keyword = searchField.getText().trim();
+        if (keyword.isEmpty()) {
+            rowSorter.setRowFilter(null);
+        } else {
+            rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + keyword));
+        }
+    }
+
+    // Method Logika Tampilan Kolom
+    private void eksekusiFilterKolom() {
+        String selected = (String) filterBox.getSelectedItem();
+        TableColumnModel colModel = table.getColumnModel();
+
+        if ("FILTER".equals(selected)) {
+            while (colModel.getColumnCount() > 0) {
+                colModel.removeColumn(colModel.getColumn(0));
+            }
+            for (TableColumn col : daftarSemuaKolom) {
+                colModel.addColumn(col);
+            }
+        } else {
+            int targetIndex = -1;
+            switch (selected) {
+                case "PLAT": targetIndex = 0; break;
+                case "PELANGGARAN": targetIndex = 1; break;
+                case "WAKTU": targetIndex = 2; break;
+                case "JALUR": targetIndex = 3; break;
+                case "DENDA (Rp)": targetIndex = 4; break;
+                case "JENIS": targetIndex = 5; break;
+            }
+
+            if (targetIndex != -1) {
+                while (colModel.getColumnCount() > 0) {
+                    colModel.removeColumn(colModel.getColumn(0));
+                }
+                // Tampilkan kolom yang dipilih + kolom aksi (Cetak Log)
+                colModel.addColumn(daftarSemuaKolom.get(targetIndex));
+                colModel.addColumn(daftarSemuaKolom.get(ViolationTableModel.ACTION_COLUMN));
+            }
+        }
+    }
+    
 
     private JComponent buildToolbar() {
         Theme.styleInput(searchField);
         searchField.setPreferredSize(new Dimension(300, 44));
         searchField.setToolTipText("Cari plat atau pelanggaran");
-        filterBox.addItem("Semua jalur");
-        for (Jalur j : Jalur.values()) filterBox.addItem(j);
+        
+        // Ganti isi ComboBox menjadi opsi kolom tabel
+        filterBox.addItem("FILTER");
+        filterBox.addItem("PLAT");
+        filterBox.addItem("PELANGGARAN");
+        filterBox.addItem("WAKTU");
+        filterBox.addItem("JALUR");
+        filterBox.addItem("DENDA (Rp)");
+        filterBox.addItem("JENIS");
+        
         Theme.styleInput(filterBox);
         filterBox.setPreferredSize(new Dimension(170, 44));
 
@@ -73,12 +145,16 @@ public class ViolationListPanel extends JPanel {
         table.setSelectionBackground(Theme.TABLE_SELECTION);
         table.setSelectionForeground(Theme.TEXT);
         table.setFillsViewportHeight(true);
+        
+        // ---> TARUH DI SINI <---
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        
         table.setDefaultRenderer(Object.class, new CellRenderer());
         JTableHeader th = table.getTableHeader();
         th.setDefaultRenderer(new HeaderRenderer());
         th.setReorderingAllowed(false);
         th.setPreferredSize(new Dimension(10, 44));
-        int[] widths = {160, 240, 190, 100, 130, 140, 150};
+        int[] widths = {140, 320, 180, 90, 120, 120, 140};
         for (int i = 0; i < widths.length; i++) table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         installRowPrintButton();
 
@@ -141,8 +217,8 @@ public class ViolationListPanel extends JPanel {
 
     /** Menggambar tombol "Cetak Log" di sel; klik ditangani oleh mouse listener di installRowPrintButton(). */
     private static class PrintButtonRenderer implements TableCellRenderer {
-        private final JPanel cell = new JPanel(new GridBagLayout());
-        // RoundedButton minimal setinggi 44 px (lebih tinggi dari baris), jadi ukurannya dibuat tetap 126x32.
+        // Ubah GridBagLayout menjadi FlowLayout dengan alignment RIGHT dan padding kanan
+        private final JPanel cell = new JPanel(new FlowLayout(FlowLayout.RIGHT, 16, 6));
         private final RoundedButton button = new RoundedButton("Cetak Log", Theme.NAVY, Color.WHITE, null) {
             @Override public Dimension getPreferredSize() { return new Dimension(126, 32); }
             @Override public Dimension getMinimumSize() { return new Dimension(126, 32); }
@@ -159,16 +235,33 @@ public class ViolationListPanel extends JPanel {
         }
     }
 
-    private static class HeaderRenderer extends DefaultTableCellRenderer {
+    /** Menggambar header tabel; untuk kolom aksi diset rata kanan agar sejajar dengan tombol. */
+    private static class HeaderRenderer implements TableCellRenderer {
+        private final JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 16, 0));
+        private final JLabel label = new JLabel();
+
+        HeaderRenderer() {
+            headerPanel.setOpaque(true);
+            headerPanel.setBackground(Theme.TABLE_HEADER);
+            headerPanel.setBorder(Theme.padding(0, 0, 0, 16));
+            label.setFont(Theme.BODY_BOLD);
+            label.setForeground(Theme.TEXT);
+            headerPanel.add(label);
+        }
+
         @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean sel,
                                                                  boolean focus, int row, int col) {
-            super.getTableCellRendererComponent(t, v, false, false, row, col);
-            setBorder(Theme.padding(0, 16, 0, 16));
-            setFont(Theme.BODY_BOLD);
-            setForeground(Theme.TEXT);
-            setBackground(Theme.TABLE_HEADER);
-            setOpaque(true);
-            return this;
+            label.setText(v != null ? v.toString() : "");
+            
+            // Jika ini kolom aksi, ubah tata letak panel menjadi rata kanan
+            if (col == ViolationTableModel.ACTION_COLUMN) {
+                ((FlowLayout) headerPanel.getLayout()).setAlignment(FlowLayout.RIGHT);
+            } else {
+                ((FlowLayout) headerPanel.getLayout()).setAlignment(FlowLayout.LEFT);
+            }
+            
+            headerPanel.revalidate();
+            return headerPanel;
         }
     }
 }

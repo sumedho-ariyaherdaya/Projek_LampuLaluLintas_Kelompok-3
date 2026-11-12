@@ -9,7 +9,10 @@ import java.util.List;
 public class ViolationLogService {
     private final List<ViolationRecord> records = new ArrayList<>();
 
-    public void add(ViolationRecord record) { records.add(record); }
+    public void add(ViolationRecord record) {
+    // Gunakan indeks 0 agar data terbaru selalu berada di paling atas
+    records.add(0, record); 
+}
 
     public List<ViolationRecord> getAll() { return Collections.unmodifiableList(records); }
 

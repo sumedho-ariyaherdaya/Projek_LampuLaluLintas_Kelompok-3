@@ -68,37 +68,88 @@ public class ViolationListPanel extends JPanel {
     }
 
     // Method Logika Tampilan Kolom
+    // Method Logika Filter Data Berdasarkan Kategori
     private void eksekusiFilterKolom() {
         String selected = (String) filterBox.getSelectedItem();
-        TableColumnModel colModel = table.getColumnModel();
+        if (selected == null || "FILTER".equals(selected)) {
+            rowSorter.setRowFilter(null); // Reset filter
+            return;
+        }
 
-        if ("FILTER".equals(selected)) {
-            while (colModel.getColumnCount() > 0) {
-                colModel.removeColumn(colModel.getColumn(0));
-            }
-            for (TableColumn col : daftarSemuaKolom) {
-                colModel.addColumn(col);
-            }
-        } else {
-            int targetIndex = -1;
-            switch (selected) {
-                case "PLAT": targetIndex = 0; break;
-                case "PELANGGARAN": targetIndex = 1; break;
-                case "WAKTU": targetIndex = 2; break;
-                case "JALUR": targetIndex = 3; break;
-                case "DENDA (Rp)": targetIndex = 4; break;
-                case "JENIS": targetIndex = 5; break;
-            }
-
-            if (targetIndex != -1) {
-                while (colModel.getColumnCount() > 0) {
-                    colModel.removeColumn(colModel.getColumn(0));
+        switch (selected) {
+            case "PELANGGARAN": {
+                // Munculkan pilihan jenis pelanggaran
+                String[] options = {"Semua", "Tidak menggunakan helm", "Tidak ada plat nomor", 
+                    "Knalpot brong", "Melebihi kecepatan", "Melanggar lalin", "Bonceng 3+", "Tanpa sabuk pengaman"};
+                String choice = (String) JOptionPane.showInputDialog(
+                    this, "Pilih Pelanggaran:", "Filter Pelanggaran",
+                    JOptionPane.QUESTION_MESSAGE, null, options, options[0]
+                );
+                if (choice != null) {
+                    if ("Semua".equals(choice)) {
+                        rowSorter.setRowFilter(null);
+                    } else {
+                        // Kolom Pelanggaran berada di indeks 1
+                        rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + choice, 1));
+                    }
                 }
-                // Tampilkan kolom yang dipilih + kolom aksi (Cetak Log)
-                colModel.addColumn(daftarSemuaKolom.get(targetIndex));
-                colModel.addColumn(daftarSemuaKolom.get(ViolationTableModel.ACTION_COLUMN));
+                break;
+            }
+            case "WAKTU": {
+                String[] options = {"Dari yang Terbaru", "Dari yang Terlama"};
+                String choice = (String) JOptionPane.showInputDialog(
+                    this, "Pilih Urutan Waktu:", "Filter Waktu",
+                    JOptionPane.QUESTION_MESSAGE, null, options, options[0]
+                );
+                if (choice != null) {
+                    java.util.List<RowSorter.SortKey> sortKeys = new java.util.ArrayList<>();
+                    if ("Dari yang Terbaru".equals(choice)) {
+                        // Kolom Waktu di indeks 2, urut turun (DESCENDING)
+                        sortKeys.add(new RowSorter.SortKey(2, SortOrder.DESCENDING));
+                    } else {
+                        // Urut naik (ASCENDING)
+                        sortKeys.add(new RowSorter.SortKey(2, SortOrder.ASCENDING));
+                    }
+                    rowSorter.setSortKeys(sortKeys);
+                }
+                break;
+            }
+            case "JALUR": {
+                String[] options = {"Semua", "Utara", "Timur", "Barat", "Selatan"};
+                String choice = (String) JOptionPane.showInputDialog(
+                    this, "Pilih Jalur:", "Filter Jalur",
+                    JOptionPane.QUESTION_MESSAGE, null, options, options[0]
+                );
+                if (choice != null) {
+                    if ("Semua".equals(choice)) {
+                        rowSorter.setRowFilter(null);
+                    } else {
+                        // Kolom Jalur berada di indeks 3
+                        rowSorter.setRowFilter(RowFilter.regexFilter("^" + choice + "$", 3));
+                    }
+                }
+                break;
+            }
+            case "JENIS": {
+                String[] options = {"Semua", "Mobil", "Sepeda Motor"};
+                String choice = (String) JOptionPane.showInputDialog(
+                    this, "Pilih Jenis Kendaraan:", "Filter Jenis",
+                    JOptionPane.QUESTION_MESSAGE, null, options, options[0]
+                );
+                if (choice != null) {
+                    if ("Semua".equals(choice)) {
+                        rowSorter.setRowFilter(null);
+                    } else {
+                        // Kolom Jenis berada di indeks 5
+                        rowSorter.setRowFilter(RowFilter.regexFilter("^" + choice + "$", 5));
+                    }
+                }
+                break;
             }
         }
+        
+        // Kembalikan pilihan ComboBox ke "FILTER" setelah dipilih agar bisa digunakan lagi
+        filterBox.setSelectedItem("FILTER");
     }
     
 
@@ -107,15 +158,14 @@ public class ViolationListPanel extends JPanel {
         searchField.setPreferredSize(new Dimension(300, 44));
         searchField.setToolTipText("Cari plat atau pelanggaran");
         
-        // Ganti isi ComboBox menjadi opsi kolom tabel
+        // Filter
         filterBox.addItem("FILTER");
-        filterBox.addItem("PLAT");
         filterBox.addItem("PELANGGARAN");
         filterBox.addItem("WAKTU");
         filterBox.addItem("JALUR");
-        filterBox.addItem("DENDA (Rp)");
         filterBox.addItem("JENIS");
         
+        // Filter Style
         Theme.styleInput(filterBox);
         filterBox.setPreferredSize(new Dimension(170, 44));
 
@@ -146,7 +196,6 @@ public class ViolationListPanel extends JPanel {
         table.setSelectionForeground(Theme.TEXT);
         table.setFillsViewportHeight(true);
         
-        // ---> TARUH DI SINI <---
         table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         
         table.setDefaultRenderer(Object.class, new CellRenderer());
@@ -243,7 +292,7 @@ public class ViolationListPanel extends JPanel {
         HeaderRenderer() {
             headerPanel.setOpaque(true);
             headerPanel.setBackground(Theme.TABLE_HEADER);
-            headerPanel.setBorder(Theme.padding(0, 0, 0, 16));
+            headerPanel.setBorder(Theme.padding(0, 0, 0, 8));
             label.setFont(Theme.BODY_BOLD);
             label.setForeground(Theme.TEXT);
             headerPanel.add(label);

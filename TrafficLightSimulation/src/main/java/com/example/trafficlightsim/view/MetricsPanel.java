@@ -1,13 +1,23 @@
 package com.example.trafficlightsim.view;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.util.EnumMap;
+import java.util.Map;
+
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+
 import com.example.trafficlightsim.model.Jalur;
 import com.example.trafficlightsim.model.SignalState;
 import com.example.trafficlightsim.view.component.RoundedPanel;
 import com.example.trafficlightsim.view.component.StatusLamp;
-import java.awt.*;
-import java.util.EnumMap;
-import java.util.Map;
-import javax.swing.*;
 
 /** Kartu "Live Metrics" (lampu empat jalur) dan kartu hitung mundur "Berikutnya". */
 public class MetricsPanel extends JPanel {

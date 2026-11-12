@@ -15,10 +15,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
 import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
+
+import com.example.trafficlightsim.model.Jalur;
+import com.example.trafficlightsim.model.SignalState;
 
 /** Java2D intersection, signals, and animated traffic. */
 public class SimulationPanel extends JPanel {
@@ -76,13 +80,24 @@ public class SimulationPanel extends JPanel {
 
     public boolean isRunning() { return timer.isRunning(); }
 
+    public SignalState getSignalState(Jalur jalur) {
+        Vehicle.Direction d = Vehicle.Direction.values()[jalur.ordinal()];
+        return isGreen(d) ? SignalState.GREEN : isYellow(d) ? SignalState.YELLOW : SignalState.RED;
+    }
+    public int getSecondsToNextChange() {
+        long reference = timer.isRunning() ? System.currentTimeMillis() : pausedAt;
+        long remaining = Math.max(0, Math.min(phaseDuration(), phaseDuration() - (reference - phaseStarted)));
+        return (int) Math.max(1, Math.ceil(remaining / 1000.0));
+    }
+    private long phaseDuration() { return (phase % 3 == 1) ? 20_000 : 1_000; }
+    private static String namaArah(Vehicle.Direction d) { return Jalur.values()[d.ordinal()].getLabel(); }
+    
     private void updateSimulation() {
         long now = System.currentTimeMillis();
-        long duration = (phase % 3 == 1) ? 20_000 : 1_000;
-        if (now - phaseStarted >= duration) {
-            phase = (phase + 1) % 12;
-            phaseStarted = now;
-        }
+        if (now - phaseStarted >= phaseDuration()) {
+        phase = (phase + 1) % 12;     
+        phaseStarted = now;
+    }
 
         int w = getWidth(), h = getHeight();
         double scale = Math.min(w / 900.0, h / 540.0);
@@ -168,11 +183,12 @@ public class SimulationPanel extends JPanel {
         drawSignals(g, cx, cy, half, scale);
         for (Vehicle v : vehicles) drawVehicle(g, v, cx, cy, scale);
         g.setColor(new Color(255,255,255,225)); g.setFont(new Font("SansSerif", Font.BOLD, Math.max(12,(int)(14*scale))));
-        g.drawString("FOUR-WAY INTERSECTION", 18, 28);
+        g.drawString("PERSIMPANGAN EMPAT ARAH", 18, 28);
         Vehicle.Direction active = Vehicle.Direction.values()[phase / 3];
-        String stage = active + " APPROACH  •  " + (phase % 3 == 1 ? "GREEN (20s)" : "YELLOW (1s)");
+        String stage = "ARAH " + namaArah(active).toUpperCase() + "  •  "
+                 + (phase % 3 == 1 ? "HIJAU (durasi 20 dtk)" : "KUNING (durasi 1 dtk)");
         g.setFont(new Font("SansSerif", Font.PLAIN, Math.max(11,(int)(12*scale)))); g.drawString(stage, 18, 47);
-        g.setColor(new Color(255,255,255,190)); g.drawString("Click a vehicle to view its inspection", 18, h-16);
+        g.setColor(new Color(255,255,255,190)); g.drawString("Klik kendaraan untuk melihat hasil pemeriksaannya", 18, h-16);
         g.dispose();
     }
 
@@ -259,7 +275,7 @@ public class SimulationPanel extends JPanel {
             Vehicle v=vehicles.get(i);
             if (v.bounds(cx,cy,s).contains(x,y)) {
                 String type=v.type==Vehicle.Type.CAR?"Mobil":"Sepeda motor";
-                String direction=v.approach.toString().toLowerCase();
+                String direction=namaArah(v.approach).toLowerCase();
                 String movement=v.movement==Vehicle.Movement.RIGHT?"belok kanan":v.movement==Vehicle.Movement.LEFT?"belok kiri":"lurus";
                 String report=v.violations.isEmpty()?"Tidak terdeteksi":"• "+String.join("\n• ",v.violations);
                 JOptionPane.showMessageDialog(this,type+" dari arah "+direction+" ("+movement+")\n\nPelanggaran:\n"+report,"Pemeriksaan kendaraan",JOptionPane.INFORMATION_MESSAGE);

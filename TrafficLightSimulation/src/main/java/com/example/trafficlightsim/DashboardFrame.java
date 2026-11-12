@@ -1,5 +1,12 @@
 package com.example.trafficlightsim;
 
+import java.awt.CardLayout;
+import java.awt.Dimension;
+import java.awt.Toolkit;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
 import com.example.trafficlightsim.controller.NavigationController;
 import com.example.trafficlightsim.controller.PrintController;
 import com.example.trafficlightsim.controller.SimulationController;
@@ -9,11 +16,6 @@ import com.example.trafficlightsim.service.ViolationLogService;
 import com.example.trafficlightsim.view.DashboardPanel;
 import com.example.trafficlightsim.view.Theme;
 import com.example.trafficlightsim.view.ViolationListPanel;
-import java.awt.CardLayout;
-import java.awt.Dimension;
-import java.awt.Toolkit;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
 
 /**
  * Jendela utama. Memuat dua layar bergantian (CardLayout): Simulasi dan Daftar Pelanggaran.
@@ -49,7 +51,7 @@ public class DashboardFrame extends JFrame {
 
         // Menyambungkan semua tombol (urutan ini penting: ViolationController dulu, dipakai NavigationController).
         ViolationController violationController = new ViolationController(this, new ViolationLogService());
-        new SimulationController(simulation, dashboardPanel.getControlBar());
+        new SimulationController(simulation, dashboardPanel.getControlBar(), dashboardPanel.getMetrics());
         new NavigationController(this, violationController);
         new PrintController(this, new LogPrinter());
     }

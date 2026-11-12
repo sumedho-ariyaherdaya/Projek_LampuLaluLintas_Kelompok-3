@@ -30,6 +30,8 @@ public class SimulationPanel extends JPanel {
     private final List<Vehicle> vehicles = new ArrayList<>();
     private final Random random = new Random();
     private final MusicPlayer musicPlayer = new MusicPlayer();
+    private final Timer timer;
+    private long pausedAt;
     private long phaseStarted = System.currentTimeMillis();
     private int phase = 0; // for each approach: yellow-before-green, green, yellow-before-red
 
@@ -49,11 +51,30 @@ public class SimulationPanel extends JPanel {
             @Override public void mouseClicked(MouseEvent e) { showVehicleAt(e.getX(), e.getY()); }
         });
         musicPlayer.start();
-        new Timer(35, e -> {
+        timer = new Timer(35, e -> {
             updateSimulation();
             repaint();
-        }).start();
+        });
+        timer.start();
     }
+
+    /** Melanjutkan simulasi dan musik (tombol Mulai). Waktu saat berhenti tidak dihitung ke fase lampu. */
+    public void start() {
+        if (timer.isRunning()) return;
+        phaseStarted += System.currentTimeMillis() - pausedAt;
+        timer.start();
+        musicPlayer.start();
+    }
+
+    /** Menghentikan simulasi dan musik (tombol Berhenti). Tampilan tetap membeku di keadaan terakhir. */
+    public void stop() {
+        if (!timer.isRunning()) return;
+        pausedAt = System.currentTimeMillis();
+        timer.stop();
+        musicPlayer.stop();
+    }
+
+    public boolean isRunning() { return timer.isRunning(); }
 
     private void updateSimulation() {
         long now = System.currentTimeMillis();

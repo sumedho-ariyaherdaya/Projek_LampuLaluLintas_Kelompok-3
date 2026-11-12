@@ -1,7 +1,12 @@
 package com.example.trafficlightsim;
 
+import com.example.trafficlightsim.controller.NavigationController;
+import com.example.trafficlightsim.controller.PrintController;
+import com.example.trafficlightsim.controller.SimulationController;
+import com.example.trafficlightsim.controller.ViolationController;
+import com.example.trafficlightsim.service.LogPrinter;
+import com.example.trafficlightsim.service.ViolationLogService;
 import com.example.trafficlightsim.view.DashboardPanel;
-import com.example.trafficlightsim.view.PreviewData;
 import com.example.trafficlightsim.view.Theme;
 import com.example.trafficlightsim.view.ViolationListPanel;
 import java.awt.CardLayout;
@@ -34,7 +39,6 @@ public class DashboardFrame extends JFrame {
         simulation.setPreferredSize(new Dimension((int) (screen.width * 0.70), (int) (screen.height * 0.60)));
 
         dashboardPanel = new DashboardPanel(simulation);
-        listPanel.setRecords(PreviewData.records()); // TODO: ganti dengan data dari ViolationLogService
 
         root.setBackground(Theme.BACKGROUND);
         root.add(dashboardPanel, SCREEN_DASHBOARD);
@@ -42,6 +46,12 @@ public class DashboardFrame extends JFrame {
         setContentPane(root);
         setMinimumSize(new Dimension(1100, 700));
         pack();
+
+        // Menyambungkan semua tombol (urutan ini penting: ViolationController dulu, dipakai NavigationController).
+        ViolationController violationController = new ViolationController(this, new ViolationLogService());
+        new SimulationController(simulation, dashboardPanel.getControlBar());
+        new NavigationController(this, violationController);
+        new PrintController(this, new LogPrinter());
     }
 
     /** Pindah layar; dipanggil oleh NavigationController nanti. */

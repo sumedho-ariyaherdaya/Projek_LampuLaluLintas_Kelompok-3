@@ -32,6 +32,7 @@ public class ReceiptPanel extends JPanel {
         add(titleBar, BorderLayout.NORTH);
 
         violations.setEditable(false);
+        violations.setFocusable(false); // supaya kursor teks tidak ikut tampil di lembar / file PNG
         violations.setOpaque(false);
         violations.setLineWrap(true);
         violations.setWrapStyleWord(true);

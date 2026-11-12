@@ -9,7 +9,8 @@ import javax.swing.table.AbstractTableModel;
 
 /** Model tabel Daftar Pelanggaran; kolom mengikuti mockup. */
 public class ViolationTableModel extends AbstractTableModel {
-    private static final String[] COLUMNS = {"PLAT", "PELANGGARAN", "WAKTU", "JALUR", "DENDA (Rp)", "JENIS"};
+    private static final String[] COLUMNS = {"PLAT", "PELANGGARAN", "WAKTU", "JALUR", "DENDA (Rp)", "JENIS", "AKSI"};
+    public static final int ACTION_COLUMN = 6; // kolom tombol "Cetak Log" di tiap baris
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private List<ViolationRecord> records = new ArrayList<>();
 
@@ -32,7 +33,8 @@ public class ViolationTableModel extends AbstractTableModel {
             case 2: return TIME.format(r.getTime());
             case 3: return r.getJalur().getLabel();
             case 4: return Rupiah.format(r.getTotalFine());
-            default: return r.getVehicleKind().getLabel();
+            case 5: return r.getVehicleKind().getLabel();
+            default: return "Cetak Log";
         }
     }
 }

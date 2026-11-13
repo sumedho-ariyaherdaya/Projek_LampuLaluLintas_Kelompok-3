@@ -11,9 +11,16 @@ public final class ViolationRecord {
     private final LocalDateTime time;
     private final Jalur jalur;
     private final JenisKendaraan vehicleKind;
+    private final VehicleIdentity vehicle; // kendaraan terdaftar (pemilik, merek, warna); null untuk data lama
 
     public ViolationRecord(String plate, List<ViolationType> violations, LocalDateTime time,
                            Jalur jalur, JenisKendaraan vehicleKind) {
+        this(plate, violations, time, jalur, vehicleKind, null);
+    }
+
+    public ViolationRecord(String plate, List<ViolationType> violations, LocalDateTime time,
+                           Jalur jalur, JenisKendaraan vehicleKind, VehicleIdentity vehicle) {
+        this.vehicle = vehicle;
         this.plate = plate;
         this.violations = List.copyOf(violations);
         this.time = time;
@@ -26,6 +33,8 @@ public final class ViolationRecord {
     public LocalDateTime getTime() { return time; }
     public Jalur getJalur() { return jalur; }
     public JenisKendaraan getVehicleKind() { return vehicleKind; }
+    public VehicleIdentity getVehicle() { return vehicle; }
+    public String getOwnerName() { return vehicle == null ? "" : vehicle.getOwner(); }
 
     /** Total denda = jumlah denda semua pelanggaran pada catatan ini. */
     public int getTotalFine() { return violations.stream().mapToInt(ViolationType::getFine).sum(); }

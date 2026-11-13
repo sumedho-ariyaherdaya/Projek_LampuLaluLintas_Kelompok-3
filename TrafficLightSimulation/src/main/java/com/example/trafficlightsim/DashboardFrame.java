@@ -5,12 +5,14 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import com.example.trafficlightsim.controller.NavigationController;
 import com.example.trafficlightsim.controller.PrintController;
 import com.example.trafficlightsim.controller.SimulationController;
 import com.example.trafficlightsim.controller.ViolationController;
+import com.example.trafficlightsim.database.KendaraanDao;
 import com.example.trafficlightsim.service.LogPrinter;
 import com.example.trafficlightsim.service.ViolationLogService;
 import com.example.trafficlightsim.view.DashboardPanel;
@@ -38,9 +40,16 @@ public class DashboardFrame extends JFrame {
 
         // Ukuran awal simulasi tetap seperti kode sebelumnya: 70% lebar dan 60% tinggi layar.
         Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-        simulation.setPreferredSize(new Dimension((int) (screen.width * 0.70), (int) (screen.height * 0.60)));
+        simulation.setPreferredSize(new Dimension((int) (screen.width * 0.55), (int) (screen.height * 0.60)));
 
         dashboardPanel = new DashboardPanel(simulation);
+
+        // Kendaraan yang muncul di simulasi diambil dari tabel kendaraan di database.
+        try {
+            simulation.setVehiclePool(new KendaraanDao().findAll());
+        } catch (RuntimeException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Database", JOptionPane.ERROR_MESSAGE);
+        }
 
         root.setBackground(Theme.BACKGROUND);
         root.add(dashboardPanel, SCREEN_DASHBOARD);

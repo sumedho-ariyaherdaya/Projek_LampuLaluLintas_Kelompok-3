@@ -37,7 +37,7 @@ public class LogPrinter {
         StringBuilder sb = new StringBuilder();
         sb.append("BUKTI PELANGGARAN LAMPU LALU LINTAS\n");
         sb.append("===================================\n");
-        sb.append("Nama            : \n");
+        sb.append("Nama            : ").append(r.getOwnerName()).append('\n');
         sb.append("Plat Kendaraan  : ").append(r.getPlate()).append('\n');
         sb.append("Pelanggaran     :\n");
         for (ViolationType t : r.getViolations()) {
@@ -47,6 +47,10 @@ public class LogPrinter {
         sb.append("Waktu           : ").append(TIME.format(r.getTime())).append('\n');
         sb.append("Jalur           : ").append(r.getJalur().getLabel()).append('\n');
         sb.append("Jenis Kendaraan : ").append(r.getVehicleKind().getLabel()).append('\n');
+        if (r.getVehicle() != null) {
+            sb.append("Ciri Kendaraan  : ").append(r.getVehicle().getColor().getLabel())
+              .append(", ").append(r.getVehicle().getBrand()).append('\n');
+        }
         Files.write(file.toPath(), sb.toString().getBytes(StandardCharsets.UTF_8));
     }
 }

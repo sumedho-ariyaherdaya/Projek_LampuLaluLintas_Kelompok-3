@@ -22,6 +22,7 @@ public class ViolationListPanel extends JPanel {
     private final RoundedButton searchButton = RoundedButton.filled("Cari", Theme.TEAL);
     private final RoundedButton backButton = RoundedButton.onDark("Kembali ke simulasi");
     private Consumer<ViolationRecord> onPrintRow;
+    private boolean resettingFilterBox; // mencegah pengembalian kotak FILTER ke "FILTER" menghapus filter yang baru dipasang
 
     private TableRowSorter<ViolationTableModel> rowSorter;
     private final java.util.List<TableColumn> daftarSemuaKolom = new java.util.ArrayList<>();
@@ -41,6 +42,8 @@ public class ViolationListPanel extends JPanel {
 
         // --- AKTIFKAN ROW SORTER UNTUK PENCARIAN & SORTING ---
         rowSorter = new TableRowSorter<>(tableModel);
+        // Kolom denda berisi teks "Rp1.000.000"; urutkan berdasarkan angkanya.
+        rowSorter.setComparator(4, (a, b) -> Long.compare(rupiahToLong(a), rupiahToLong(b)));
         table.setRowSorter(rowSorter);
 
         // Simpan referensi kolom asli
@@ -54,7 +57,7 @@ public class ViolationListPanel extends JPanel {
         searchButton.addActionListener(e -> eksekusiPencarian());
         
         // Listener Kotak Filter Kolom
-        filterBox.addActionListener(e -> eksekusiFilterKolom());
+        filterBox.addActionListener(e -> { if (!resettingFilterBox) eksekusiFilterKolom(); });
     }
 
     // Method Logika Pencarian
@@ -63,7 +66,7 @@ public class ViolationListPanel extends JPanel {
         if (keyword.isEmpty()) {
             rowSorter.setRowFilter(null);
         } else {
-            rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + keyword));
+            rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(keyword)));
         }
     }
 
@@ -90,7 +93,7 @@ public class ViolationListPanel extends JPanel {
                         rowSorter.setRowFilter(null);
                     } else {
                         // Kolom Pelanggaran berada di indeks 1
-                        rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + choice, 1));
+                        rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(choice), 1));
                     }
                 }
                 break;
@@ -125,7 +128,7 @@ public class ViolationListPanel extends JPanel {
                         rowSorter.setRowFilter(null);
                     } else {
                         // Kolom Jalur berada di indeks 3
-                        rowSorter.setRowFilter(RowFilter.regexFilter("^" + choice + "$", 3));
+                        rowSorter.setRowFilter(RowFilter.regexFilter("^" + java.util.regex.Pattern.quote(choice) + "$", 3));
                     }
                 }
                 break;
@@ -141,7 +144,7 @@ public class ViolationListPanel extends JPanel {
                         rowSorter.setRowFilter(null);
                     } else {
                         // Kolom Jenis berada di indeks 5
-                        rowSorter.setRowFilter(RowFilter.regexFilter("^" + choice + "$", 5));
+                        rowSorter.setRowFilter(RowFilter.regexFilter("^" + java.util.regex.Pattern.quote(choice) + "$", 5));
                     }
                 }
                 break;
@@ -149,7 +152,14 @@ public class ViolationListPanel extends JPanel {
         }
         
         // Kembalikan pilihan ComboBox ke "FILTER" setelah dipilih agar bisa digunakan lagi
+        resettingFilterBox = true;
         filterBox.setSelectedItem("FILTER");
+        resettingFilterBox = false;
+    }
+
+    private static long rupiahToLong(Object text) {
+        String digits = String.valueOf(text).replaceAll("\\D", "");
+        return digits.isEmpty() ? 0 : Long.parseLong(digits);
     }
     
 

@@ -6,13 +6,13 @@ import javax.swing.*;
 
 /** Kartu "Total Pelanggaran: N". */
 public class TotalViolationCard extends RoundedPanel {
-    private final JLabel value = new JLabel("6");
+    private final JLabel value = new JLabel("0");
 
     public TotalViolationCard() {
-        super(16, Theme.CARD, Theme.BORDER);
+        super(16, new Color(0, 0, 0, 0), null); // tanpa latar: tampil sebagai teks di panel kanan
         setLayout(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        setBorder(Theme.padding(12, 8, 12, 8));
-        JLabel label = new JLabel("Total Pelanggaran:");
+        setBorder(Theme.padding(4, 4, 4, 4));
+        JLabel label = new JLabel("Total Pelanggaran :");
         label.setFont(Theme.BODY_BOLD);
         label.setForeground(Theme.TEXT);
         value.setFont(Theme.font(Font.BOLD, 22));

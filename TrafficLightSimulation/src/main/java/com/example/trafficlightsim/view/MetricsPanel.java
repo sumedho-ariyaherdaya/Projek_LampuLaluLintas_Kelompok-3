@@ -4,6 +4,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -21,6 +23,7 @@ import com.example.trafficlightsim.view.component.StatusLamp;
 
 /** Kartu "Live Metrics" (lampu empat jalur) dan kartu hitung mundur "Berikutnya". */
 public class MetricsPanel extends JPanel {
+    private static final Jalur[] URUTAN_LAMPU = Jalur.values(); // urutan siklus lampu: Utara, Timur, Selatan, Barat
     private final Map<Jalur, StatusLamp> lamps = new EnumMap<>(Jalur.class);
     private final JLabel countdown = new JLabel("12", SwingConstants.CENTER);
 
@@ -35,29 +38,33 @@ public class MetricsPanel extends JPanel {
 
     private JComponent buildLampCard() {
         RoundedPanel card = new RoundedPanel(16, Theme.CARD, Theme.BORDER);
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setBorder(Theme.padding(16));
-        JLabel title = new JLabel("Live Metrics");
+        card.setLayout(new BorderLayout(0, 10));
+        card.setBorder(Theme.padding(12, 12, 12, 12));
+        JLabel title = new JLabel("Live Metrics", SwingConstants.CENTER);
         title.setFont(Theme.HEADING);
         title.setForeground(Theme.TEXT);
-        title.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.add(title);
-        card.add(Box.createVerticalStrut(10));
-        for (Jalur j : Jalur.values()) {
+        card.add(title, BorderLayout.NORTH);
+
+        // Lampu berjajar ke samping, nama jalur di bawah tiap lampu. Ubah URUTAN_LAMPU untuk menukar posisi.
+        JPanel row = new JPanel(new GridLayout(1, 4, 6, 0));
+        row.setOpaque(false);
+        for (Jalur j : URUTAN_LAMPU) {
             StatusLamp lamp = new StatusLamp();
+            lamp.setPreferredSize(new Dimension(30, 30));
             lamps.put(j, lamp);
-            JLabel name = new JLabel(j.getLabel());
+            JPanel lampWrap = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+            lampWrap.setOpaque(false);
+            lampWrap.add(lamp);
+            JLabel name = new JLabel(j.getLabel(), SwingConstants.CENTER);
             name.setFont(Theme.BODY);
             name.setForeground(Theme.TEXT);
-            JPanel row = new JPanel(new BorderLayout(10, 0));
-            row.setOpaque(false);
-            row.setAlignmentX(Component.LEFT_ALIGNMENT);
-            row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
-            row.add(lamp, BorderLayout.WEST);
-            row.add(name, BorderLayout.CENTER);
-            card.add(row);
-            card.add(Box.createVerticalStrut(6));
+            JPanel cell = new JPanel(new BorderLayout(0, 4));
+            cell.setOpaque(false);
+            cell.add(lampWrap, BorderLayout.NORTH);
+            cell.add(name, BorderLayout.CENTER);
+            row.add(cell);
         }
+        card.add(row, BorderLayout.CENTER);
         return card;
     }
 

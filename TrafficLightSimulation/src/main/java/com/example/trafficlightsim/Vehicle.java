@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import com.example.trafficlightsim.model.JenisKendaraan;
+import com.example.trafficlightsim.model.VehicleIdentity;
+
 /** A small vehicle moving toward and through the intersection. */
 final class Vehicle {
     enum Direction { NORTH, EAST, SOUTH, WEST }
@@ -17,6 +20,7 @@ final class Vehicle {
     final Direction approach;
     final Type type;
     final Color color;
+    final VehicleIdentity identity; // identitas pasti: plat, pemilik, warna, merek
     final List<String> violations = new ArrayList<>();
     final Movement movement;
     final MotorcycleVariant motorcycleVariant;
@@ -24,14 +28,12 @@ final class Vehicle {
     boolean passed;
     boolean turned;
 
-    Vehicle(Direction direction, Type type, Random random) {
+    Vehicle(Direction direction, VehicleIdentity identity, Random random) {
         this.direction = direction;
         this.approach = direction;
-        this.type = type;
-        Color[] colors = { new Color(225, 82, 70), new Color(50, 133, 204),
-            new Color(244, 181, 55), new Color(94, 171, 112),
-            new Color(139, 104, 190), new Color(239, 125, 64) };
-        color = colors[random.nextInt(colors.length)];
+        this.identity = identity;
+        this.type = identity.getKind() == JenisKendaraan.MOBIL ? Type.CAR : Type.MOTORCYCLE;
+        color = identity.getColor().getColor();
         int routeChoice = random.nextInt(100);
         movement = routeChoice < 50 ? Movement.RIGHT
                 : routeChoice < 80 ? Movement.STRAIGHT : Movement.LEFT;
@@ -45,6 +47,19 @@ final class Vehicle {
             motorcycleVariant = null;
         }
         if (random.nextInt(6) == 0) violations.add("Tidak ada plat nomor");
+    }
+
+    /** Plat terlihat kecuali kendaraan ini sedang melanggar "Tidak ada plat nomor". */
+    boolean hasVisiblePlate() { return !violations.contains("Tidak ada plat nomor"); }
+
+    /** Sisi tujuan keluar persimpangan (arah datang NORTH + belok kanan = WEST, dst). */
+    Direction destination() {
+        int a = approach.ordinal(); // NORTH=0, EAST=1, SOUTH=2, WEST=3
+        switch (movement) {
+            case STRAIGHT: return Direction.values()[(a + 2) % 4];
+            case RIGHT: return Direction.values()[(a + 3) % 4]; // N->W, E->N, S->E, W->S
+            default: return Direction.values()[(a + 1) % 4];    // N->E, E->S, S->W, W->N
+        }
     }
 
     Rectangle2D bounds(double cx, double cy, double scale) {

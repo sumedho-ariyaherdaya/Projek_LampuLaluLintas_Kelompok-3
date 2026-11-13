@@ -1,67 +1,101 @@
 package com.example.trafficlightsim.view;
 
-import com.example.trafficlightsim.model.JenisKendaraan;
 import com.example.trafficlightsim.model.Jalur;
+import com.example.trafficlightsim.model.JenisKendaraan;
 import com.example.trafficlightsim.model.ViolationType;
-import com.example.trafficlightsim.view.component.HeaderBar;
+import com.example.trafficlightsim.model.WarnaKendaraan;
 import com.example.trafficlightsim.view.component.RoundedButton;
 import com.example.trafficlightsim.view.component.RoundedPanel;
 import java.awt.*;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import javax.swing.*;
 
-/** Isi form "Input Data Pelanggaran" (dipakai oleh InputDataDialog). */
-public class InputDataPanel extends JPanel {
+/**
+ * Form "Input Data Pelanggaran" versi ringkas dua kolom. Dipasang di panel kanan halaman simulasi
+ * (area di bawah Total Pelanggaran), bukan lagi di jendela terpisah.
+ */
+public class InputDataPanel extends JPanel implements Scrollable {
+    private static final int FIELD_HEIGHT = 36;
+    private static final int FIELD_WIDTH = 170; // lebar dasar kolom kiri; melebar mengikuti panel
+
     private final JTextField plateField = new JTextField();
     private final Map<ViolationType, JCheckBox> violationBoxes = new EnumMap<>(ViolationType.class);
     private final JComboBox<Jalur> jalurBox = new JComboBox<>(Jalur.values());
     private final JTextField totalFineField = new JTextField("Rp0");
     private final JComboBox<JenisKendaraan> kindBox = new JComboBox<>(JenisKendaraan.values());
+    private final JComboBox<String> brandBox = new JComboBox<>();
+    private final JComboBox<WarnaKendaraan> colorBox = new JComboBox<>(WarnaKendaraan.values());
+    private final JTextField ownerField = new JTextField("-");
     private final RoundedButton submitButton = RoundedButton.filled("Kirim", Theme.TEAL);
+    private final RoundedButton cancelButton = RoundedButton.outline("Batal");
 
     public InputDataPanel() {
-        super(new BorderLayout());
+        super(new GridBagLayout());
         setBackground(Theme.BACKGROUND);
-        add(new HeaderBar("Input Data Pelanggaran"), BorderLayout.NORTH);
+        setBorder(Theme.padding(4, 2, 4, 2));
 
-        Theme.styleInput(plateField);
-        Theme.styleInput(jalurBox);
-        Theme.styleInput(totalFineField);
+        for (JComponent c : new JComponent[] {plateField, jalurBox, totalFineField, kindBox, brandBox, colorBox, ownerField}) {
+            Theme.styleInput(c);
+            c.setPreferredSize(new Dimension(FIELD_WIDTH, FIELD_HEIGHT));
+            c.setMinimumSize(new Dimension(100, FIELD_HEIGHT));
+            c.setMaximumSize(new Dimension(Integer.MAX_VALUE, FIELD_HEIGHT));
+        }
         totalFineField.setEditable(false);
-        Theme.styleInput(kindBox);
+        ownerField.setEditable(false);
+        plateField.setToolTipText("Kosongkan jika kendaraan tidak memiliki plat nomor");
         jalurBox.setSelectedIndex(-1);
         kindBox.setSelectedIndex(-1);
+        colorBox.setSelectedIndex(-1);
 
-        JPanel form = new JPanel();
-        form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
-        form.setOpaque(false);
-        form.setBorder(Theme.padding(24, 28, 24, 28));
-        form.add(group("Plat nomor", plateField));
-        form.add(Box.createVerticalStrut(16));
-        form.add(buildViolationCard());
-        form.add(Box.createVerticalStrut(16));
-        form.add(group("Jalur", jalurBox));
-        form.add(Box.createVerticalStrut(16));
-        form.add(group("Total denda", totalFineField));
-        form.add(Box.createVerticalStrut(16));
-        form.add(group("Jenis kendaraan", kindBox));
-        form.add(Box.createVerticalStrut(20));
-        submitButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-        submitButton.setPreferredSize(new Dimension(10, 48));
-        submitButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
-        form.add(submitButton);
-        add(form, BorderLayout.CENTER);
-        setPreferredSize(new Dimension(520, 780));
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.anchor = GridBagConstraints.NORTHWEST;
+        c.weightx = 0.5;
+        c.insets = new Insets(0, 6, 8, 6);
+
+        JLabel title = new JLabel("Input Data Pelanggaran");
+        title.setFont(Theme.HEADING);
+        title.setForeground(Theme.TEXT);
+        c.gridx = 0; c.gridy = 0; c.gridwidth = 2;
+        add(title, c);
+        c.gridwidth = 1;
+
+        // Kolom kiri: identitas kendaraan.
+        JComponent[] left = {
+            group("Plat nomor", plateField), group("Jenis kendaraan", kindBox), group("Merek", brandBox),
+            group("Warna", colorBox), group("Jalur", jalurBox)
+        };
+        for (int i = 0; i < left.length; i++) {
+            c.gridx = 0; c.gridy = 1 + i;
+            add(left[i], c);
+        }
+
+        // Kolom kanan: daftar pelanggaran, memanjang sebanyak lima baris kiri.
+        c.gridx = 1; c.gridy = 1; c.gridheight = left.length; c.fill = GridBagConstraints.BOTH;
+        add(buildViolationCard(), c);
+        c.gridheight = 1; c.fill = GridBagConstraints.HORIZONTAL;
+
+        c.gridx = 0; c.gridy = 1 + left.length;
+        add(group("Pemilik (otomatis)", ownerField), c);
+        c.gridx = 1;
+        add(group("Total denda", totalFineField), c);
+
+        JPanel buttons = new JPanel(new GridLayout(1, 2, 12, 0));
+        buttons.setOpaque(false);
+        buttons.add(cancelButton);
+        buttons.add(submitButton);
+        c.gridx = 0; c.gridy = 2 + left.length; c.gridwidth = 2; c.insets = new Insets(4, 6, 4, 6);
+        add(buttons, c);
     }
 
     private JComponent group(String label, JComponent field) {
         JPanel p = new JPanel();
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
         p.setOpaque(false);
-        p.setAlignmentX(Component.LEFT_ALIGNMENT);
         p.add(label(label));
-        p.add(Box.createVerticalStrut(6));
+        p.add(Box.createVerticalStrut(4));
         p.add(field);
         return p;
     }
@@ -77,10 +111,9 @@ public class InputDataPanel extends JPanel {
     private JComponent buildViolationCard() {
         RoundedPanel card = new RoundedPanel(12, Theme.CARD, Theme.BORDER);
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setBorder(Theme.padding(12, 16, 12, 16));
-        card.setAlignmentX(Component.LEFT_ALIGNMENT);
+        card.setBorder(Theme.padding(10, 14, 10, 14));
         card.add(label("Pelanggaran"));
-        card.add(Box.createVerticalStrut(8));
+        card.add(Box.createVerticalStrut(6));
         for (ViolationType t : ViolationType.values()) {
             JCheckBox box = new JCheckBox(t.getLabel());
             box.setIcon(Theme.checkIcon(false));
@@ -93,9 +126,35 @@ public class InputDataPanel extends JPanel {
             box.setAlignmentX(Component.LEFT_ALIGNMENT);
             violationBoxes.put(t, box);
             card.add(box);
-            card.add(Box.createVerticalStrut(4));
+            card.add(Box.createVerticalStrut(2));
         }
         return card;
+    }
+
+    /** Mengganti pilihan merek (tanpa memilih satu pun). */
+    public void setBrands(List<String> brands) {
+        brandBox.setModel(new DefaultComboBoxModel<>(brands.toArray(new String[0])));
+        brandBox.setSelectedIndex(-1);
+    }
+
+    /** Jenis, merek, dan warna dikunci saat kendaraan sudah dikenali dari plat. */
+    public void setTraitsEditable(boolean editable) {
+        kindBox.setEnabled(editable);
+        brandBox.setEnabled(editable);
+        colorBox.setEnabled(editable);
+    }
+
+    /** Mengosongkan form (dipanggil setiap form dibuka). Pilihan merek diisi ulang oleh controller. */
+    public void reset() {
+        plateField.setText("");
+        for (JCheckBox box : violationBoxes.values()) box.setSelected(false);
+        jalurBox.setSelectedIndex(-1);
+        kindBox.setSelectedIndex(-1);
+        colorBox.setSelectedIndex(-1);
+        brandBox.setSelectedIndex(-1);
+        totalFineField.setText("Rp0");
+        ownerField.setText("-");
+        setTraitsEditable(true);
     }
 
     public JTextField getPlateField() { return plateField; }
@@ -103,5 +162,18 @@ public class InputDataPanel extends JPanel {
     public JComboBox<Jalur> getJalurBox() { return jalurBox; }
     public JTextField getTotalFineField() { return totalFineField; }
     public JComboBox<JenisKendaraan> getKindBox() { return kindBox; }
+    public JComboBox<String> getBrandBox() { return brandBox; }
+    public JComboBox<WarnaKendaraan> getColorBox() { return colorBox; }
+    public JTextField getOwnerField() { return ownerField; }
     public JButton getSubmitButton() { return submitButton; }
+    public JButton getCancelButton() { return cancelButton; }
+
+    // --- Scrollable: lebar mengikuti area; muncul scrollbar vertikal jika layar pendek ---
+    @Override public Dimension getPreferredScrollableViewportSize() { return getPreferredSize(); }
+    @Override public int getScrollableUnitIncrement(Rectangle r, int o, int d) { return 16; }
+    @Override public int getScrollableBlockIncrement(Rectangle r, int o, int d) { return 80; }
+    @Override public boolean getScrollableTracksViewportWidth() { return true; }
+    @Override public boolean getScrollableTracksViewportHeight() {
+        return getParent() instanceof JViewport && ((JViewport) getParent()).getHeight() > getPreferredSize().height;
+    }
 }

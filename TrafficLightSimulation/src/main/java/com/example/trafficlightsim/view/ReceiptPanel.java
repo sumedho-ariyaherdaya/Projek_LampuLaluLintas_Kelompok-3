@@ -16,6 +16,8 @@ public class ReceiptPanel extends JPanel {
     private final JLabel time = valueLabel();
     private final JLabel jalur = valueLabel();
     private final JLabel kind = valueLabel();
+    private final JLabel name = valueLabel();   // pemilik, diisi dari data kendaraan
+    private final JLabel traits = valueLabel(); // warna dan merek
 
     public ReceiptPanel() {
         super(new BorderLayout());
@@ -39,7 +41,6 @@ public class ReceiptPanel extends JPanel {
         violations.setFont(Theme.font(Font.PLAIN, 15));
         violations.setForeground(Theme.TEXT);
 
-        JLabel name = valueLabel(); // kosong: diisi tulis tangan
         name.setBorder(new MatteBorder(0, 0, 1, 0, Theme.TEXT_MUTED));
         name.setText(" ");
 
@@ -52,9 +53,10 @@ public class ReceiptPanel extends JPanel {
         rows.add(row("Pelanggaran", violations, false));
         rows.add(row("Waktu", time, false));
         rows.add(row("Jalur", jalur, false));
-        rows.add(row("Jenis Kendaraan", kind, true));
+        rows.add(row("Jenis Kendaraan", kind, false));
+        rows.add(row("Ciri Kendaraan", traits, true));
         add(rows, BorderLayout.CENTER);
-        setPreferredSize(new Dimension(600, 440));
+        setPreferredSize(new Dimension(600, 490));
     }
 
     private static JLabel valueLabel() {
@@ -97,9 +99,13 @@ public class ReceiptPanel extends JPanel {
         time.setText(TIME.format(r.getTime()));
         jalur.setText(r.getJalur().getLabel());
         kind.setText(r.getVehicleKind().getLabel());
+        name.setText(r.getVehicle() == null ? " " : r.getOwnerName());
+        traits.setText(r.getVehicle() == null ? " "
+                : r.getVehicle().getColor().getLabel() + " \u2022 " + r.getVehicle().getBrand());
     }
 
     public void clear() {
         plate.setText(" "); violations.setText(""); time.setText(" "); jalur.setText(" "); kind.setText(" ");
+        name.setText(" "); traits.setText(" ");
     }
 }

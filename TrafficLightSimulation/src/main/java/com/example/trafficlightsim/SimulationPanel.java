@@ -23,15 +23,14 @@ import javax.swing.Timer;
 
 import com.example.trafficlightsim.model.Jalur;
 import com.example.trafficlightsim.model.SignalState;
+import com.example.trafficlightsim.model.VehicleIdentity;
 
 /** Java2D intersection, signals, and animated traffic. */
 public class SimulationPanel extends JPanel {
     private static final Color ASPHALT = new Color(57, 65, 74);
     private static final Color ROAD_MARK = new Color(236, 232, 208);
-    private static final Image MOTORCYCLE_HELMET = loadMotorcycleImage("motorcycle-helmet.png");
-    private static final Image MOTORCYCLE_NO_HELMET = loadMotorcycleImage("motorcycle-no-helmet.png");
-    private static final Image MOTORCYCLE_NOISY_EXHAUST = loadMotorcycleImage("motorcycle-noisy-exhaust.png");
     private final List<Vehicle> vehicles = new ArrayList<>();
+    private List<VehicleIdentity> vehiclePool = new ArrayList<>(); // kendaraan yang boleh muncul (dari database)
     private final Random random = new Random();
     private final MusicPlayer musicPlayer = new MusicPlayer();
     private final Timer timer;
@@ -39,13 +38,23 @@ public class SimulationPanel extends JPanel {
     private long phaseStarted = System.currentTimeMillis();
     private int phase = 0; // for each approach: yellow-before-green, green, yellow-before-red
 
-    private static Image loadMotorcycleImage(String fileName) {
-        String resource = "/com/example/trafficlightsim/assets/" + fileName;
-        try {
-            return ImageIO.read(SimulationPanel.class.getResource(resource));
-        } catch (IOException | IllegalArgumentException ex) {
-            return null; // Keep the simple Java2D motorcycle fallback if an asset is missing.
+    /** Mengisi daftar kendaraan yang akan muncul di simulasi (dipanggil DashboardFrame dari database). */
+    public void setVehiclePool(List<VehicleIdentity> pool) { this.vehiclePool = new ArrayList<>(pool); }
+
+    /** Memilih kendaraan acak yang ciri dan platnya belum ada di layar; null jika semua sedang tampil. */
+    private VehicleIdentity pickAvailableIdentity() {
+        List<VehicleIdentity> free = new ArrayList<>();
+        for (VehicleIdentity id : vehiclePool) {
+            boolean onScreen = false;
+            for (Vehicle v : vehicles) {
+                if (v.identity.traitKey().equals(id.traitKey()) || v.identity.getPlate().equals(id.getPlate())) {
+                    onScreen = true;
+                    break;
+                }
+            }
+            if (!onScreen) free.add(id);
         }
+        return free.isEmpty() ? null : free.get(random.nextInt(free.size()));
     }
 
     public SimulationPanel() {
@@ -108,8 +117,9 @@ public class SimulationPanel extends JPanel {
             Vehicle.Direction d = Vehicle.Direction.values()[random.nextInt(4)];
             boolean occupied = vehicles.stream().anyMatch(v -> v.approach == d && !v.passed
                     && v.progress < -(half + 12 * scale) + 100 * scale);
-            if (!occupied) {
-                Vehicle vehicle = new Vehicle(d, random.nextInt(3) == 0 ? Vehicle.Type.MOTORCYCLE : Vehicle.Type.CAR, random);
+            VehicleIdentity identity = occupied ? null : pickAvailableIdentity();
+            if (identity != null) {
+                Vehicle vehicle = new Vehicle(d, identity, random);
                 vehicle.progress = -Math.max(w, h) * 0.78;
                 vehicles.add(vehicle);
             }
@@ -240,9 +250,7 @@ public class SimulationPanel extends JPanel {
         Rectangle2D b = v.bounds(cx,cy,s);
         g.setColor(new Color(0,0,0,65)); g.fillRoundRect((int)b.getX()+2,(int)b.getY()+3,(int)b.getWidth(),(int)b.getHeight(),8,8);
         if (v.type == Vehicle.Type.MOTORCYCLE) {
-            Image sprite = v.motorcycleVariant == Vehicle.MotorcycleVariant.NO_HELMET ? MOTORCYCLE_NO_HELMET
-                    : v.motorcycleVariant == Vehicle.MotorcycleVariant.NOISY_EXHAUST ? MOTORCYCLE_NOISY_EXHAUST
-                    : MOTORCYCLE_HELMET;
+            Image sprite = BikeSprites.get(v.motorcycleVariant, v.identity.getColor());
             if (sprite != null) {
                 Graphics2D bikeGraphics = (Graphics2D) g.create();
                 bikeGraphics.translate(b.getCenterX(), b.getCenterY());
@@ -275,10 +283,16 @@ public class SimulationPanel extends JPanel {
             Vehicle v=vehicles.get(i);
             if (v.bounds(cx,cy,s).contains(x,y)) {
                 String type=v.type==Vehicle.Type.CAR?"Mobil":"Sepeda motor";
-                String direction=namaArah(v.approach).toLowerCase();
                 String movement=v.movement==Vehicle.Movement.RIGHT?"belok kanan":v.movement==Vehicle.Movement.LEFT?"belok kiri":"lurus";
+                String plate=v.hasVisiblePlate()?v.identity.getPlate():"Tidak terlihat (tanpa plat nomor)";
                 String report=v.violations.isEmpty()?"Tidak terdeteksi":"• "+String.join("\n• ",v.violations);
-                JOptionPane.showMessageDialog(this,type+" dari arah "+direction+" ("+movement+")\n\nPelanggaran:\n"+report,"Pemeriksaan kendaraan",JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this,type+"\n"
+                        +"Plat nomor: "+plate+"\n"
+                        +"Merek: "+v.identity.getBrand()+"\n"
+                        +"Warna: "+v.identity.getColor().getLabel()+"\n\n"
+                        +"Arah datang: "+namaArah(v.approach)+"\n"
+                        +"Tujuan: "+namaArah(v.destination())+" ("+movement+")\n\n"
+                        +"Pelanggaran:\n"+report,"Pemeriksaan kendaraan",JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
         }

@@ -5,6 +5,7 @@ com\example\trafficlightsim\view\component\StatusLamp.class
 com\example\trafficlightsim\view\Theme.class
 com\example\trafficlightsim\model\JenisKendaraan.class
 com\example\trafficlightsim\view\ReceiptDialog.class
+com\example\trafficlightsim\BikeSprites$1.class
 com\example\trafficlightsim\Vehicle$Direction.class
 com\example\trafficlightsim\view\PreviewData.class
 com\example\trafficlightsim\Vehicle.class

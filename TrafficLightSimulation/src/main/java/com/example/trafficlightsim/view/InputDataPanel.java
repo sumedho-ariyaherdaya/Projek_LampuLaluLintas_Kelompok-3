@@ -19,6 +19,7 @@ import javax.swing.*;
 public class InputDataPanel extends JPanel implements Scrollable {
     private static final int FIELD_HEIGHT = 36;
     private static final int FIELD_WIDTH = 170; // lebar dasar kolom kiri; melebar mengikuti panel
+    private static final Color LOCKED_BG = new Color(33, 37, 41); // latar plat saat terkunci (dihitamkan)
 
     private final JTextField plateField = new JTextField();
     private final Map<ViolationType, JCheckBox> violationBoxes = new EnumMap<>(ViolationType.class);
@@ -44,7 +45,6 @@ public class InputDataPanel extends JPanel implements Scrollable {
         }
         totalFineField.setEditable(false);
         ownerField.setEditable(false);
-        plateField.setToolTipText("Kosongkan jika kendaraan tidak memiliki plat nomor");
         jalurBox.setSelectedIndex(-1);
         kindBox.setSelectedIndex(-1);
         colorBox.setSelectedIndex(-1);
@@ -144,6 +144,19 @@ public class InputDataPanel extends JPanel implements Scrollable {
         colorBox.setEnabled(editable);
     }
 
+    /**
+    * Mode normal (noPlate = false): plat bisa diketik; jenis/merek/warna terkunci dan terisi otomatis dari plat.
+    * Mode tanpa plat (noPlate = true): plat dihitamkan dan terkunci (terisi otomatis); jenis/merek/warna bisa diisi.
+    */
+    public void setNoPlateMode(boolean noPlate) {
+       plateField.setEditable(!noPlate);
+       plateField.setFocusable(!noPlate);
+       plateField.setBackground(noPlate ? LOCKED_BG : Color.WHITE);
+       plateField.setForeground(noPlate ? Color.WHITE : Theme.TEXT);
+       plateField.setToolTipText(noPlate ? "Terisi otomatis setelah jenis, merek, dan warna dipilih" : null);
+       setTraitsEditable(noPlate);
+   } 
+
     /** Mengosongkan form (dipanggil setiap form dibuka). Pilihan merek diisi ulang oleh controller. */
     public void reset() {
         plateField.setText("");
@@ -154,8 +167,9 @@ public class InputDataPanel extends JPanel implements Scrollable {
         brandBox.setSelectedIndex(-1);
         totalFineField.setText("Rp0");
         ownerField.setText("-");
-        setTraitsEditable(true);
+        setNoPlateMode(false);   
     }
+    
 
     public JTextField getPlateField() { return plateField; }
     public Map<ViolationType, JCheckBox> getViolationBoxes() { return violationBoxes; }

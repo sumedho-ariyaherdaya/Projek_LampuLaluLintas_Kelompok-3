@@ -59,11 +59,15 @@ public class ViolationController {
         for (JCheckBox box : form.getViolationBoxes().values()) {
             box.addActionListener(e -> form.getTotalFineField().setText(Rupiah.format(selectedFine())));
         }
+        
         form.getPlateField().getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { identify(); }
-            @Override public void removeUpdate(DocumentEvent e) { identify(); }
-            @Override public void changedUpdate(DocumentEvent e) { identify(); }
-        });
+    @Override public void insertUpdate(DocumentEvent e) { if (!updating) identify(); }
+    @Override public void removeUpdate(DocumentEvent e) { if (!updating) identify(); }
+    @Override public void changedUpdate(DocumentEvent e) { if (!updating) identify(); }
+});
+// Mode input berganti saat pelanggaran "Tidak ada plat nomor" dicentang / dilepas.
+       form.getViolationBoxes().get(ViolationType.NO_PLATE).addActionListener(e -> applyPlateMode());
+        
         form.getKindBox().addActionListener(e -> {
             if (updating) return;
             JenisKendaraan kind = (JenisKendaraan) form.getKindBox().getSelectedItem();
@@ -79,20 +83,13 @@ public class ViolationController {
     }
 
     /**
-     * Mengenali kendaraan. Plat terisi: cari berdasarkan plat dan isi jenis/merek/warna otomatis.
-     * Plat kosong: cari berdasarkan jenis + merek + warna yang dipilih operator.
-     */
+ * Mode normal: plat selesai diketik dan terdaftar -> jenis/merek/warna terisi otomatis (terkunci).
+ * Mode tanpa plat: jenis + merek + warna terisi -> plat muncul otomatis (terkunci).
+ */
     private void identify() {
-        String plate = KendaraanDao.normalizePlate(form.getPlateField().getText());
         VehicleIdentity found;
         String status;
-        if (!plate.isEmpty()) {
-            found = kendaraanDao.findByPlate(plate);
-            status = found != null ? found.getOwner() : "Plat tidak terdaftar";
-            if (found != null) fillTraits(found);
-            form.setTraitsEditable(found == null);
-        } else {
-            form.setTraitsEditable(true);
+        if (isNoPlateSelected()) {
             JenisKendaraan kind = (JenisKendaraan) form.getKindBox().getSelectedItem();
             String brand = (String) form.getBrandBox().getSelectedItem();
             WarnaKendaraan color = (WarnaKendaraan) form.getColorBox().getSelectedItem();
@@ -103,9 +100,64 @@ public class ViolationController {
                 found = null;
                 status = "-";
             }
+            setPlateText(found != null ? found.getPlate() : "");
+        } else {
+            String plate = KendaraanDao.normalizePlate(form.getPlateField().getText());
+            if (plate.isEmpty()) {
+                found = null;
+                status = "-";
+                clearTraits();
+            } else {
+                found = kendaraanDao.findByPlate(plate);
+                if (found != null) {
+                    fillTraits(found);
+                    status = found.getOwner();
+                } else {
+                    clearTraits();
+                    status = "Plat tidak terdaftar";
+                }
+            }
         }
         matched = found;
         form.getOwnerField().setText(status);
+    }
+    
+    private boolean isNoPlateSelected() {
+    return form.getViolationBoxes().get(ViolationType.NO_PLATE).isSelected();
+}
+    /** Berganti antara mode normal dan mode tanpa plat; isian identitas dikosongkan agar tidak tercampur. */
+    private void applyPlateMode() {
+        boolean noPlate = isNoPlateSelected();
+        updating = true;
+        form.getPlateField().setText("");
+        form.getKindBox().setSelectedIndex(-1);
+        form.getColorBox().setSelectedIndex(-1);
+        form.setBrands(kendaraanDao.brands(null));
+        form.getOwnerField().setText("-");
+        form.setNoPlateMode(noPlate);
+        updating = false;
+        matched = null;
+        if (noPlate) form.getKindBox().requestFocusInWindow();
+        else form.getPlateField().requestFocusInWindow();
+    }
+
+    private void clearTraits() {
+        if (form.getKindBox().getSelectedItem() == null && form.getBrandBox().getSelectedItem() == null
+                && form.getColorBox().getSelectedItem() == null) return;
+        boolean prev = updating;
+        updating = true;
+        form.getKindBox().setSelectedIndex(-1);
+        form.setBrands(kendaraanDao.brands(null));
+        form.getColorBox().setSelectedIndex(-1);
+        updating = prev;
+    }
+
+    private void setPlateText(String text) {
+        if (form.getPlateField().getText().equals(text)) return;
+        boolean prev = updating;
+        updating = true;
+        form.getPlateField().setText(text);
+        updating = prev;
     }
 
     private void fillTraits(VehicleIdentity v) {
@@ -135,11 +187,10 @@ public class ViolationController {
         String plateText = form.getPlateField().getText().trim();
         Jalur jalur = (Jalur) form.getJalurBox().getSelectedItem();
         VehicleIdentity vehicle = matched;
-        boolean noPlate = KendaraanDao.normalizePlate(plateText).isEmpty();
+        boolean noPlate = chosen.contains(ViolationType.NO_PLATE);
 
         String error = null;
-        if (noPlate && !chosen.contains(ViolationType.NO_PLATE)) error = "Plat nomor belum diisi.";
-        else if (!noPlate && chosen.contains(ViolationType.NO_PLATE)) error = "Plat nomor diisi, tetapi pelanggaran \"Tidak ada plat nomor\" dipilih.";
+        if (!noPlate && plateText.isEmpty()) error = "Plat nomor belum diisi.";
         else if (chosen.isEmpty()) error = "Pilih minimal satu pelanggaran.";
         else if (vehicle == null && noPlate) error = "Kendaraan tanpa plat belum teridentifikasi. Pilih jenis, merek, dan warna yang sesuai.";
         else if (vehicle == null) error = "Plat " + plateText.toUpperCase() + " tidak terdaftar di data kendaraan.";

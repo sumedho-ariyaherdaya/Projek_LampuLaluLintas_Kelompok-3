@@ -11,7 +11,6 @@ import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -134,28 +133,42 @@ public class SimulationPanel extends JPanel {
         double half = road / 2;
         if (random.nextInt(16) == 0 && vehicles.size() < 24) {
             Vehicle.Direction d = Vehicle.Direction.values()[random.nextInt(4)];
-            boolean occupied = vehicles.stream().anyMatch(v -> v.approach == d && !v.passed
-                    && v.progress < -(half + 12 * scale) + 100 * scale);
-            VehicleIdentity identity = occupied ? null : pickAvailableIdentity();
-            if (identity != null) {
-                Vehicle vehicle = new Vehicle(d, identity, random);
-                vehicle.progress = -Math.max(w, h) * 0.78;
-                vehicles.add(vehicle);
+            boolean laneOccupied = vehicles.stream().anyMatch(v -> v.approach == d);
+            if (!laneOccupied) {
+                int roll = random.nextInt(100);
+                int groupSize = roll < 30 ? 1 : roll < 80 ? 2 : 3;
+                double firstProgress = -Math.max(w, h) * 0.78;
+                for (int i = 0; i < groupSize && vehicles.size() < 24; i++) {
+                    VehicleIdentity identity = pickAvailableIdentity();
+                    if (identity == null) break;
+                    Vehicle vehicle = new Vehicle(d, identity, random);
+                    double length = (vehicle.type == Vehicle.Type.CAR ? 48 : 38) * scale;
+                    vehicle.progress = firstProgress - i * (length + 8 * scale);
+                    vehicles.add(vehicle);
+                }
             }
         }
         for (Vehicle v : vehicles) {
             double max = Math.max(w, h) * 0.65;
-            // Left turns may proceed on red; straight and right-turn traffic wait for green.
-            boolean mayEnter = isGreen(v.approach) || v.movement == Vehicle.Movement.LEFT;
             double vehicleLength = (v.type == Vehicle.Type.CAR ? 48 : 38) * scale;
-            // Align the vehicle's front bumper exactly with the painted stop line.
-            double stopAt = -(half + 12 * scale) - vehicleLength;
-            double speed = (v.type == Vehicle.Type.CAR ? 2.0 : 2.6) * scale;
-            if (!v.passed && !mayEnter) {
-                if (v.progress < stopAt) v.progress = Math.min(stopAt, v.progress + speed);
-                continue;
+            double stopAt = -(half + 44 * scale) - vehicleLength;
+            // Keep a safe following distance from the closest vehicle ahead in this lane.
+            Vehicle leader = null;
+            for (Vehicle other : vehicles) {
+                if (other != v && other.approach == v.approach && !other.passed
+                        && other.progress > v.progress
+                        && (leader == null || other.progress < leader.progress)) {
+                    leader = other;
+                }
             }
-            v.progress += speed;
+            double maxProgress = leader == null ? Double.POSITIVE_INFINITY
+                    : leader.progress - vehicleLength - 8 * scale;
+            boolean alreadyCrossedStopLine = v.progress > stopAt;
+            boolean mayEnter = isGreen(v.approach) || v.movement == Vehicle.Movement.LEFT
+                    || alreadyCrossedStopLine;
+            if (!mayEnter) maxProgress = Math.min(maxProgress, stopAt);
+            double speed = (v.type == Vehicle.Type.CAR ? 2.0 : 2.6) * scale;
+            v.progress = Math.max(v.progress, Math.min(v.progress + speed, maxProgress));
             if (!v.passed && v.progress > -road / 2 + 40 * scale) {
                 v.passed = true;
                 if (v.movement != Vehicle.Movement.STRAIGHT) {
@@ -208,7 +221,7 @@ public class SimulationPanel extends JPanel {
         g.setColor(ROAD_MARK); g.setStroke(new BasicStroke(Math.max(1.5f, (float)(2*scale))));
         g.drawLine((int)cx, 0, (int)cx, (int)(cy-half-10*scale)); g.drawLine((int)cx, (int)(cy+half+10*scale), (int)cx, h);
         g.drawLine(0, (int)cy, (int)(cx-half-10*scale), (int)cy); g.drawLine((int)(cx+half+10*scale), (int)cy, w, (int)cy);
-        drawStopLines(g, cx, cy, half, scale);
+        drawCrosswalks(g, cx, cy, half, scale);
         drawSignals(g, cx, cy, half, scale);
         for (Vehicle v : vehicles) drawVehicle(g, v, cx, cy, scale);
         g.setColor(new Color(255,255,255,225)); g.setFont(new Font("SansSerif", Font.BOLD, Math.max(12,(int)(14*scale))));
@@ -221,50 +234,76 @@ public class SimulationPanel extends JPanel {
         g.dispose();
     }
 
-    private void drawStopLines(Graphics2D g, double cx, double cy, double half, double s) {
-        g.setColor(new Color(244,244,232));
-        int thickness = Math.max(4,(int)(6*s));
-        int lineLength = (int)(roadWidth(half) * 0.92);
-        int offset = (int)(half + 12 * s);
-        // Stop lines run across each incoming lane, just before the intersection.
-        g.fillRect((int)(cx-lineLength/2.0), (int)(cy-offset-thickness/2.0), lineLength, thickness);
-        g.fillRect((int)(cx-lineLength/2.0), (int)(cy+offset-thickness/2.0), lineLength, thickness);
-        g.fillRect((int)(cx-offset-thickness/2.0), (int)(cy-lineLength/2.0), thickness, lineLength);
-        g.fillRect((int)(cx+offset-thickness/2.0), (int)(cy-lineLength/2.0), thickness, lineLength);
-    }
-    private double roadWidth(double half) { return half * 2; }
+    private void drawCrosswalks(Graphics2D g, double cx, double cy, double half, double s) {
+        g.setColor(new Color(244, 244, 232));
+        int stripe = Math.max(2, (int) (4 * s));
+        int step = Math.max(stripe + 2, (int) Math.round(6 * s));
+        int roadWidth = Math.max(1, (int) (2 * half));
+        int outer = (int) (half + 36 * s);
+        int inner = (int) (half + 2 * s);
+        int bandLength = outer - inner;
+        int count = Math.max(1, (roadWidth - stripe) / step + 1);
 
-    private void drawSignals(Graphics2D g, double cx, double cy, double half, double s) {
-        // Signal arrows are painted directly on each incoming lane, pointing straight ahead.
-        double offset = 27 * s;
-        // Keep the arrows ahead of the stop line so waiting vehicles remain behind them.
-        double distance = Math.max(20 * s, half - 24 * s);
-        double size = 14 * s;
-        drawSignal(g, cx + offset, cy - distance, Vehicle.Direction.NORTH, Vehicle.Direction.SOUTH, size);
-        drawSignal(g, cx + distance, cy + offset, Vehicle.Direction.EAST, Vehicle.Direction.WEST, size);
-        drawSignal(g, cx - offset, cy + distance, Vehicle.Direction.SOUTH, Vehicle.Direction.NORTH, size);
-        drawSignal(g, cx - distance, cy - offset, Vehicle.Direction.WEST, Vehicle.Direction.EAST, size);
-    }
-    private void drawSignal(Graphics2D g, double x, double y, Vehicle.Direction approach, Vehicle.Direction arrow, double size) {
-        Color color = isGreen(approach) ? new Color(58, 230, 115)
-                : isYellow(approach) ? new Color(255, 202, 54) : new Color(244, 72, 72);
-        // Dark outline keeps the colored pavement signal visible against vehicles and road markings.
-        g.setColor(new Color(20, 25, 29, 190));
-        drawArrow(g, x, y, size + 2, arrow);
-        g.setColor(color);
-        drawArrow(g, x, y, size, arrow);
-    }
-    private void drawArrow(Graphics2D g, double x, double y, double r, Vehicle.Direction d) {
-        Path2D p = new Path2D.Double();
-        switch(d) {
-            case NORTH: p.moveTo(x,y-r);p.lineTo(x+r*.72,y);p.lineTo(x+r*.25,y);p.lineTo(x+r*.25,y+r*.62);p.lineTo(x-r*.25,y+r*.62);p.lineTo(x-r*.25,y);p.lineTo(x-r*.72,y);break;
-            case SOUTH: p.moveTo(x,y+r);p.lineTo(x+r*.72,y);p.lineTo(x+r*.25,y);p.lineTo(x+r*.25,y-r*.62);p.lineTo(x-r*.25,y-r*.62);p.lineTo(x-r*.25,y);p.lineTo(x-r*.72,y);break;
-            case EAST: p.moveTo(x+r,y);p.lineTo(x,y-r*.72);p.lineTo(x,y-r*.25);p.lineTo(x-r*.62,y-r*.25);p.lineTo(x-r*.62,y+r*.25);p.lineTo(x,y+r*.25);p.lineTo(x,y+r*.72);break;
-            default: p.moveTo(x-r,y);p.lineTo(x,y-r*.72);p.lineTo(x,y-r*.25);p.lineTo(x+r*.62,y-r*.25);p.lineTo(x+r*.62,y+r*.25);p.lineTo(x,y+r*.25);p.lineTo(x,y+r*.72);
+        // North and south: vertical stripes across the vertical road.
+        for (int i = 0; i < count; i++) {
+            int x = (int) (cx - half) + i * step;
+            g.fillRect(x, (int) (cy - outer), stripe, bandLength);
+            g.fillRect(x, (int) (cy + inner), stripe, bandLength);
         }
-        p.closePath(); g.fill(p);
+        // East and west: horizontal stripes across the horizontal road.
+        for (int i = 0; i < count; i++) {
+            int y = (int) (cy - half) + i * step;
+            g.fillRect((int) (cx - outer), y, bandLength, stripe);
+            g.fillRect((int) (cx + inner), y, bandLength, stripe);
+        }
+    }
+    private void drawSignals(Graphics2D g, double cx, double cy, double half, double s) {
+        // Match the annotated compass positions in the simulation: N upper-left,
+        // E upper-right, W lower-left, and S lower-right.
+        double side = half + 14 * s;
+        double shoulder = half + 40 * s;
+        drawSignal(g, cx - side, cy - shoulder, Vehicle.Direction.NORTH, s);
+        drawSignal(g, cx + shoulder, cy - shoulder, Vehicle.Direction.EAST, s);
+        drawSignal(g, cx - side, cy + shoulder, Vehicle.Direction.WEST, s);
+        drawSignal(g, cx + shoulder, cy + shoulder, Vehicle.Direction.SOUTH, s);
     }
 
+    private void drawSignal(Graphics2D g, double x, double y, Vehicle.Direction approach, double s) {
+        double width = 21 * s, height = 56 * s;
+        double radius = 6.2 * s;
+        double left = x - width / 2, top = y - height / 2;
+        g.setColor(new Color(17, 21, 25));
+        g.fillRoundRect((int) left, (int) top, (int) width, (int) height,
+                (int) (7 * s), (int) (7 * s));
+        g.setColor(new Color(92, 101, 108));
+        g.setStroke(new BasicStroke(Math.max(1f, (float) (1.2 * s))));
+        g.drawRoundRect((int) left, (int) top, (int) width, (int) height,
+                (int) (7 * s), (int) (7 * s));
+
+        Color[] active = {
+            isRed(approach) ? new Color(255, 65, 65) : new Color(86, 36, 39),
+            isYellow(approach) ? new Color(255, 207, 58) : new Color(83, 69, 37),
+            isGreen(approach) ? new Color(62, 235, 119) : new Color(34, 75, 49)
+        };
+        for (int i = 0; i < active.length; i++) {
+            double lampY = top + (12 + i * 16) * s;
+            g.setColor(active[i]);
+            g.fillOval((int) (x - radius), (int) (lampY - radius),
+                    (int) (radius * 2), (int) (radius * 2));
+            boolean lit = (i == 0 && isRed(approach))
+                    || (i == 1 && isYellow(approach))
+                    || (i == 2 && isGreen(approach));
+            if (lit) {
+                g.setColor(new Color(255, 255, 255, 105));
+                g.fillOval((int) (x - radius * .48), (int) (lampY - radius * .62),
+                        (int) (radius * .62), (int) (radius * .42));
+            }
+        }
+    }
+
+    private boolean isRed(Vehicle.Direction d) {
+        return !isGreen(d) && !isYellow(d);
+    }
     private void drawVehicle(Graphics2D g, Vehicle v, double cx, double cy, double s) {
         Rectangle2D b = v.bounds(cx,cy,s);
         g.setColor(new Color(0,0,0,65)); g.fillRoundRect((int)b.getX()+2,(int)b.getY()+3,(int)b.getWidth(),(int)b.getHeight(),8,8);

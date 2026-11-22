@@ -8,22 +8,31 @@ import javax.swing.border.Border;
 public final class Theme {
     private Theme() { }
 
-    public static final Color NAVY = new Color(0x14243D);
-    public static final Color BACKGROUND = new Color(0xF2F5F9);
-    public static final Color CARD = Color.WHITE;
-    public static final Color BORDER = new Color(0xDDE3EC);
-    public static final Color INPUT_BORDER = new Color(0xC5CEDB);
+    // --- Palet referensi (marmer merah-emas) ---
+    public static final Color MAROON_DEEP = new Color(0x350200);
+    public static final Color MAROON = new Color(0x6B0200);
+    public static final Color RED = new Color(0x900500);
+    public static final Color GOLD = new Color(0xBD953E);
+    public static final Color GOLD_LIGHT = new Color(0xD4B356);
+    public static final Color GOLD_SOFT = new Color(0xF5EBD0); // emas sangat muda, untuk latar lembut dan ujung gradasi
+
+    // Nama konstanta lama dipertahankan (NAVY, TEAL, ...) agar file lain tidak perlu diubah; hanya nilainya yang berganti.
+    public static final Color NAVY = MAROON_DEEP;              // header, teks utama, tombol garis
+    public static final Color BACKGROUND = new Color(0xF8F1E1);
+    public static final Color CARD = new Color(0xFFFCF6);
+    public static final Color BORDER = new Color(0xE3D5B5);
+    public static final Color INPUT_BORDER = new Color(0xCDB98A);
     public static final Color TEXT = NAVY;
-    public static final Color TEXT_MUTED = new Color(0x4A5A72);
-    public static final Color TEAL = new Color(0x0E7C86);
+    public static final Color TEXT_MUTED = new Color(0x7A5A52);
+    public static final Color TEAL = RED;                      // warna aksi utama (Kirim, Cari, Download, ...)
     public static final Color SUCCESS = new Color(0x15803D);
     public static final Color DANGER = new Color(0xC0392B);
-    public static final Color WARNING = new Color(0xB45309);
-    public static final Color ALERT_TEXT = new Color(0xB42318);
-    public static final Color TABLE_HEADER = new Color(0xE8EEF5);
-    public static final Color TABLE_STRIPE = new Color(0xF8FAFC);
-    public static final Color TABLE_LINE = new Color(0xE6EBF2);
-    public static final Color TABLE_SELECTION = new Color(0xD8EEF0);
+    public static final Color WARNING = GOLD;
+    public static final Color ALERT_TEXT = new Color(0xA11B10);
+    public static final Color TABLE_HEADER = new Color(0xEFE3C4);
+    public static final Color TABLE_STRIPE = new Color(0xFCF8EE);
+    public static final Color TABLE_LINE = new Color(0xEADFC6);
+    public static final Color TABLE_SELECTION = new Color(0xF3E2B3);
 
     /** Warna lampu: sama dengan panah sinyal yang digambar SimulationPanel.drawSignal. */
     public static final Color SIGNAL_GREEN = new Color(58, 230, 115);
@@ -81,5 +90,39 @@ public final class Theme {
             @Override public int getIconWidth() { return 20; }
             @Override public int getIconHeight() { return 20; }
         };
+    }
+
+    /** Warna campuran: amount 0 = a, 1 = b. */
+    public static Color mix(Color a, Color b, float amount) {
+        float t = Math.max(0f, Math.min(1f, amount));
+        return new Color(Math.round(a.getRed() + (b.getRed() - a.getRed()) * t),
+                         Math.round(a.getGreen() + (b.getGreen() - a.getGreen()) * t),
+                         Math.round(a.getBlue() + (b.getBlue() - a.getBlue()) * t));
+    }
+
+    /** Gradasi atas-bawah setinggi h piksel. */
+    public static GradientPaint vertical(int h, Color top, Color bottom) {
+        return new GradientPaint(0, 0, top, 0, Math.max(1, h), bottom);
+    }
+
+    /** Warna teks dan latar lencana untuk status log pelanggaran. */
+    public static Color statusForeground(com.example.trafficlightsim.model.StatusPelanggaran s) {
+        switch (s) {
+            case TERKIRIM: return new Color(0x8A5A00);
+            case DITERIMA: return new Color(0x1F5F8B);
+            case DISANGGAH: return new Color(0xA11B10);
+            case SELESAI: return new Color(0x146C34);
+            default: return new Color(0x6B5B57);
+        }
+    }
+
+    public static Color statusBackground(com.example.trafficlightsim.model.StatusPelanggaran s) {
+        switch (s) {
+            case TERKIRIM: return new Color(0xF8E7B5);
+            case DITERIMA: return new Color(0xD9EAF6);
+            case DISANGGAH: return new Color(0xF9D9D4);
+            case SELESAI: return new Color(0xD9F0E0);
+            default: return new Color(0xEDE4D0);
+        }
     }
 }

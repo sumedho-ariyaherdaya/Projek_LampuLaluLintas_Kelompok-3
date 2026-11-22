@@ -6,6 +6,7 @@ import com.example.trafficlightsim.service.LogPrinter;
 import com.example.trafficlightsim.view.ReceiptDialog;
 import java.io.File;
 import java.io.IOException;
+import java.util.function.Consumer;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -19,6 +20,7 @@ public class PrintController {
     private final LogPrinter printer;
     private final ReceiptDialog dialog;
     private ViolationRecord current;
+    private Consumer<ViolationRecord> onLogOpened = r -> { };
 
     public PrintController(DashboardFrame frame, LogPrinter printer) {
         this.frame = frame;
@@ -29,10 +31,23 @@ public class PrintController {
         dialog.getDownloadButton().addActionListener(e -> download());
     }
 
+    /** Dipanggil tepat sebelum halaman Log tampil (EmailController memakainya untuk memuat riwayat). */
+    public void setOnLogOpened(Consumer<ViolationRecord> action) { this.onLogOpened = action; }
+
+    public ReceiptDialog getDialog() { return dialog; }
+    public ViolationRecord getCurrentRecord() { return current; }
+
+    /** Mengganti catatan yang sedang tampil di halaman Log (mis. setelah status berubah). */
+    public void reloadCurrent(ViolationRecord record) {
+        current = record;
+        dialog.setRecord(record);
+    }
+
     /** Halaman 2 -> Halaman 4 untuk satu catatan. */
     private void showLog(ViolationRecord record) {
         current = record;
         dialog.setRecord(record);
+        onLogOpened.accept(record);
         dialog.setLocationRelativeTo(frame);
         dialog.setVisible(true); // modal: kode berhenti di sini sampai dialog ditutup
     }

@@ -1,6 +1,7 @@
 package com.example.trafficlightsim.view;
 
 import com.example.trafficlightsim.SimulationPanel;
+import com.example.trafficlightsim.view.component.ClockLabel;
 import com.example.trafficlightsim.view.component.HeaderBar;
 import com.example.trafficlightsim.view.component.RoundedPanel;
 import java.awt.*;
@@ -26,7 +27,9 @@ public class DashboardPanel extends JPanel {
     public DashboardPanel(SimulationPanel simulation) {
         super(new BorderLayout());
         setBackground(Theme.BACKGROUND);
-        add(new HeaderBar("Simulasi Lalu Lintas 4 Jalur"), BorderLayout.NORTH);
+        HeaderBar header = new HeaderBar("Simulasi Lalu Lintas 4 Jalur");
+        header.setTrailing(new ClockLabel()); // jam & tanggal realtime dari waktu sistem
+        add(header, BorderLayout.NORTH);
 
         RoundedPanel simCard = new RoundedPanel(16, Theme.CARD, Theme.BORDER);
         simCard.setLayout(new BorderLayout());

@@ -19,7 +19,7 @@ public class LogPrinter {
 
     /** Nama file yang disarankan, mis. "log-pelanggaran-B-5126-AA". */
     public String suggestedName(ViolationRecord r) {
-        String plate = r.getPlate().replaceAll("[^A-Za-z0-9]+", "-").replaceAll("^-|-$", "");
+        String plate = r.getDisplayPlate().replaceAll("[^A-Za-z0-9]+", "-").replaceAll("^-|-$", "");
         return "log-pelanggaran-" + (plate.isEmpty() ? "tanpa-plat" : plate);
     }
 
@@ -37,11 +37,12 @@ public class LogPrinter {
         StringBuilder sb = new StringBuilder();
         sb.append("BUKTI PELANGGARAN LAMPU LALU LINTAS\n");
         sb.append("===================================\n");
+        if (!r.getKodeLog().isEmpty()) sb.append("ID Log          : ").append(r.getKodeLog()).append('\n');
         sb.append("Nama            : ").append(r.getOwnerName()).append('\n');
-        sb.append("Plat Kendaraan  : ").append(r.getPlate()).append('\n');
+        sb.append("Plat Kendaraan  : ").append(r.getDisplayPlate()).append('\n');
         sb.append("Pelanggaran     :\n");
         for (ViolationType t : r.getViolations()) {
-            sb.append("  - ").append(t.getLabel()).append(" (").append(Rupiah.format(t.getFine())).append(")\n");
+            sb.append("  - ").append(r.describe(t)).append(" (").append(Rupiah.format(t.getFine())).append(")\n");
         }
         sb.append("Total denda     : ").append(Rupiah.format(r.getTotalFine())).append('\n');
         sb.append("Waktu           : ").append(TIME.format(r.getTime())).append('\n');
@@ -51,6 +52,9 @@ public class LogPrinter {
             sb.append("Ciri Kendaraan  : ").append(r.getVehicle().getColor().getLabel())
               .append(", ").append(r.getVehicle().getBrand()).append('\n');
         }
+        String to = !r.getEmailTujuan().isEmpty() ? r.getEmailTujuan() : r.getVehicleEmail();
+        if (!to.isEmpty()) sb.append("Email Tujuan    : ").append(to).append('\n');
+        sb.append("Status          : ").append(r.getStatus().getLabel()).append('\n');
         Files.write(file.toPath(), sb.toString().getBytes(StandardCharsets.UTF_8));
     }
 }

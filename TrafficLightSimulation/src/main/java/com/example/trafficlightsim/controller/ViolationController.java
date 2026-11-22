@@ -38,6 +38,28 @@ public class ViolationController {
         this.service = service;
         this.form = frame.getDashboardPanel().getInputForm();
         wireForm();
+        frame.getListPanel().setOnDeleteRow(this::deleteRecord);
+        refreshViews();
+    }
+
+    /** Tombol tong sampah di Daftar Pelanggaran: meminta konfirmasi, lalu menghapus catatan beserta riwayatnya. */
+    private void deleteRecord(ViolationRecord r) {
+        String warning = r.getStatus() == com.example.trafficlightsim.model.StatusPelanggaran.BELUM_DIKIRIM ? ""
+                : "\n\nStatus log ini \"" + r.getStatus().getLabel() + "\": riwayat pengiriman dan tanggapannya ikut terhapus.";
+        int ok = JOptionPane.showConfirmDialog(frame,
+                "Hapus log " + r.getKodeLog() + "?\n"
+                + "Plat: " + r.getPlate() + "  \u2022  Pemilik: " + r.getOwnerName() + "\n"
+                + "Pelanggaran: " + r.getViolationSummary() + warning
+                + "\n\nTindakan ini tidak dapat dibatalkan. ID log tidak akan dipakai ulang.",
+                "Hapus Log Pelanggaran", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (ok != JOptionPane.YES_OPTION) return;
+        try {
+            if (!service.delete(r.getId()))
+                JOptionPane.showMessageDialog(frame, "Log tersebut sudah tidak ada (mungkin sudah dihapus).",
+                        "Hapus Log Pelanggaran", JOptionPane.INFORMATION_MESSAGE);
+        } catch (RuntimeException ex) {
+            JOptionPane.showMessageDialog(frame, ex.getMessage(), "Database", JOptionPane.ERROR_MESSAGE);
+        }
         refreshViews();
     }
 
@@ -59,6 +81,9 @@ public class ViolationController {
         for (JCheckBox box : form.getViolationBoxes().values()) {
             box.addActionListener(e -> form.getTotalFineField().setText(Rupiah.format(selectedFine())));
         }
+        // Kolom keterangan aktif hanya bila "Pelanggaran lainnya" dicentang.
+        form.getViolationBoxes().get(ViolationType.OTHER).addActionListener(e ->
+                form.setOtherFieldEnabled(form.getViolationBoxes().get(ViolationType.OTHER).isSelected()));
         
         form.getPlateField().getDocument().addDocumentListener(new DocumentListener() {
     @Override public void insertUpdate(DocumentEvent e) { if (!updating) identify(); }
@@ -188,6 +213,7 @@ public class ViolationController {
         Jalur jalur = (Jalur) form.getJalurBox().getSelectedItem();
         VehicleIdentity vehicle = matched;
         boolean noPlate = chosen.contains(ViolationType.NO_PLATE);
+        String otherNote = form.getOtherField().getText().trim();
 
         String error = null;
         if (!noPlate && plateText.isEmpty()) error = "Plat nomor belum diisi.";
@@ -195,6 +221,9 @@ public class ViolationController {
         else if (vehicle == null && noPlate) error = "Kendaraan tanpa plat belum teridentifikasi. Pilih jenis, merek, dan warna yang sesuai.";
         else if (vehicle == null) error = "Plat " + plateText.toUpperCase() + " tidak terdaftar di data kendaraan.";
         else if (jalur == null) error = "Jalur belum dipilih.";
+        else if (chosen.contains(ViolationType.OTHER) && otherNote.isEmpty())
+            error = "Keterangan \"Pelanggaran lainnya\" belum diisi.";
+        else if (otherNote.length() > 100) error = "Keterangan pelanggaran lainnya maksimal 100 karakter.";
 
         // Validasi kesesuaian jenis kendaraan dan pelanggaran
         else if (vehicle.getKind() == JenisKendaraan.MOBIL && chosen.contains(ViolationType.NO_HELMET)) {
@@ -212,7 +241,9 @@ public class ViolationController {
         String plate = noPlate ? "-" : vehicle.getPlate(); // kendaraan memang tanpa plat
 
         try {
-            service.add(new ViolationRecord(plate, chosen, LocalDateTime.now(), jalur, vehicle.getKind(), vehicle));
+            service.add(new ViolationRecord(plate, chosen, LocalDateTime.now(), jalur, vehicle.getKind(), vehicle,
+                    0, "", com.example.trafficlightsim.model.StatusPelanggaran.BELUM_DIKIRIM, "",
+                    chosen.contains(ViolationType.OTHER) ? otherNote : ""));
         } catch (RuntimeException ex) {
             JOptionPane.showMessageDialog(frame, ex.getMessage(), "Database", JOptionPane.ERROR_MESSAGE);
             return false;
@@ -222,7 +253,7 @@ public class ViolationController {
     }
 
     /** Menyegarkan Daftar Pelanggaran (halaman 2) dan kartu Total Pelanggaran (halaman 1). */
-    private void refreshViews() {
+    public void refreshViews() {
         frame.getListPanel().setRecords(service.getAll());
         frame.getDashboardPanel().getTotalCard().setTotal(service.size());
     }

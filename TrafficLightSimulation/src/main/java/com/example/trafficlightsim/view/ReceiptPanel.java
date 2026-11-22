@@ -2,6 +2,7 @@ package com.example.trafficlightsim.view;
 
 import com.example.trafficlightsim.model.ViolationRecord;
 import com.example.trafficlightsim.model.ViolationType;
+import com.example.trafficlightsim.view.component.GradientPanel;
 import java.awt.*;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
@@ -11,6 +12,7 @@ import javax.swing.border.MatteBorder;
 /** Lembar "Bukti Pelanggaran Lampu Lalu Lintas". Dibuat sebagai panel agar nanti bisa dicetak apa adanya. */
 public class ReceiptPanel extends JPanel {
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private final JLabel kodeLog = valueLabel(); // ID unik permanen
     private final JLabel plate = valueLabel();
     private final JTextArea violations = new JTextArea(4, 30);
     private final JLabel time = valueLabel();
@@ -18,6 +20,8 @@ public class ReceiptPanel extends JPanel {
     private final JLabel kind = valueLabel();
     private final JLabel name = valueLabel();   // pemilik, diisi dari data kendaraan
     private final JLabel traits = valueLabel(); // warna dan merek
+    private final JLabel email = valueLabel();  // email tujuan pengiriman log
+    private final JLabel status = valueLabel(); // status penanganan log
 
     public ReceiptPanel() {
         super(new BorderLayout());
@@ -27,8 +31,7 @@ public class ReceiptPanel extends JPanel {
         JLabel title = new JLabel("BUKTI PELANGGARAN LAMPU LALU LINTAS", SwingConstants.CENTER);
         title.setFont(Theme.font(Font.BOLD, 18));
         title.setForeground(Color.WHITE);
-        JPanel titleBar = new JPanel(new BorderLayout());
-        titleBar.setBackground(Theme.NAVY);
+        JPanel titleBar = new GradientPanel(Theme.MAROON_DEEP, Theme.RED, true).withAccent(Theme.GOLD);
         titleBar.setBorder(Theme.padding(18, 28, 18, 28));
         titleBar.add(title, BorderLayout.CENTER);
         add(titleBar, BorderLayout.NORTH);
@@ -48,15 +51,18 @@ public class ReceiptPanel extends JPanel {
         rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
         rows.setOpaque(false);
         rows.setBorder(Theme.padding(4, 28, 8, 28));
+        rows.add(row("ID Log", kodeLog, false));
         rows.add(row("Nama", name, false));
         rows.add(row("Plat Kendaraan", plate, false));
         rows.add(row("Pelanggaran", violations, false));
         rows.add(row("Waktu", time, false));
         rows.add(row("Jalur", jalur, false));
         rows.add(row("Jenis Kendaraan", kind, false));
-        rows.add(row("Ciri Kendaraan", traits, true));
+        rows.add(row("Ciri Kendaraan", traits, false));
+        rows.add(row("Email Tujuan", email, false));
+        rows.add(row("Status", status, true));
         add(rows, BorderLayout.CENTER);
-        setPreferredSize(new Dimension(600, 490));
+        setPreferredSize(new Dimension(600, 600));
     }
 
     private static JLabel valueLabel() {
@@ -84,7 +90,7 @@ public class ReceiptPanel extends JPanel {
         p.setOpaque(false);
         p.setBorder(BorderFactory.createCompoundBorder(
                 last ? BorderFactory.createEmptyBorder() : new MatteBorder(0, 0, 1, 0, Theme.TABLE_LINE),
-                Theme.padding(12, 0, 12, 0)));
+                Theme.padding(8, 0, 8, 0)));
         p.add(left, BorderLayout.WEST);
         p.add(value, BorderLayout.CENTER);
         p.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -93,19 +99,25 @@ public class ReceiptPanel extends JPanel {
 
     /** Mengisi lembar dari satu catatan pelanggaran. */
     public void setRecord(ViolationRecord r) {
-        plate.setText(r.getPlate());
+        kodeLog.setText(r.getKodeLog().isEmpty() ? "-" : r.getKodeLog());
+        plate.setText(r.getDisplayPlate()); // plat kendaraan terdaftar, juga untuk pelanggaran "tanpa plat nomor"
         violations.setText(r.getViolations().stream()
-                .map(ViolationType::getLabel).map(s -> "• " + s).collect(Collectors.joining("\n")));
+                .map(r::describe).map(s -> "• " + s).collect(Collectors.joining("\n")));
         time.setText(TIME.format(r.getTime()));
         jalur.setText(r.getJalur().getLabel());
         kind.setText(r.getVehicleKind().getLabel());
         name.setText(r.getVehicle() == null ? " " : r.getOwnerName());
         traits.setText(r.getVehicle() == null ? " "
                 : r.getVehicle().getColor().getLabel() + " \u2022 " + r.getVehicle().getBrand());
+        String to = !r.getEmailTujuan().isEmpty() ? r.getEmailTujuan() : r.getVehicleEmail();
+        email.setText(to.isEmpty() ? "-" : to);
+        status.setText(r.getStatus().getLabel());
+        status.setForeground(Theme.statusForeground(r.getStatus()));
+        status.setFont(Theme.font(Font.BOLD, 15));
     }
 
     public void clear() {
         plate.setText(" "); violations.setText(""); time.setText(" "); jalur.setText(" "); kind.setText(" ");
-        name.setText(" "); traits.setText(" ");
+        name.setText(" "); traits.setText(" "); kodeLog.setText(" "); email.setText(" "); status.setText(" ");
     }
 }

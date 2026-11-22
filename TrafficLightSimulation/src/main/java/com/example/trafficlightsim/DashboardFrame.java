@@ -8,31 +8,38 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
+import com.example.trafficlightsim.controller.DatabaseController;
+import com.example.trafficlightsim.controller.EmailController;
 import com.example.trafficlightsim.controller.NavigationController;
 import com.example.trafficlightsim.controller.PrintController;
 import com.example.trafficlightsim.controller.SimulationController;
 import com.example.trafficlightsim.controller.ViolationController;
 import com.example.trafficlightsim.database.KendaraanDao;
+import com.example.trafficlightsim.service.KendaraanService;
 import com.example.trafficlightsim.service.LogPrinter;
 import com.example.trafficlightsim.service.ViolationLogService;
+import com.example.trafficlightsim.service.ViolationWorkflowService;
 import com.example.trafficlightsim.view.DashboardPanel;
+import com.example.trafficlightsim.view.DatabasePanel;
 import com.example.trafficlightsim.view.Theme;
 import com.example.trafficlightsim.view.ViolationListPanel;
 
 /**
- * Jendela utama. Memuat dua layar bergantian (CardLayout): Simulasi dan Daftar Pelanggaran.
+ * Jendela utama. Memuat tiga layar bergantian (CardLayout): Simulasi, Daftar Pelanggaran, dan Database kendaraan.
  * Menggantikan versi hasil NetBeans GUI Builder (DashboardFrame.form dihapus) agar bisa diedit langsung.
  * Main.java tidak perlu diubah.
  */
 public class DashboardFrame extends JFrame {
     public static final String SCREEN_DASHBOARD = "dashboard";
     public static final String SCREEN_LIST = "list";
+    public static final String SCREEN_DATABASE = "database";
 
     private final CardLayout cards = new CardLayout();
     private final JPanel root = new JPanel(cards);
     private final SimulationPanel simulation = new SimulationPanel();
     private final DashboardPanel dashboardPanel;
     private final ViolationListPanel listPanel = new ViolationListPanel();
+    private final DatabasePanel databasePanel = new DatabasePanel();
 
     public DashboardFrame() {
         super("Simulasi Lalu Lintas 4 Jalur");
@@ -54,6 +61,7 @@ public class DashboardFrame extends JFrame {
         root.setBackground(Theme.BACKGROUND);
         root.add(dashboardPanel, SCREEN_DASHBOARD);
         root.add(listPanel, SCREEN_LIST);
+        root.add(databasePanel, SCREEN_DATABASE);
         setContentPane(root);
         setMinimumSize(new Dimension(1100, 700));
         pack();
@@ -62,7 +70,10 @@ public class DashboardFrame extends JFrame {
         ViolationController violationController = new ViolationController(this, new ViolationLogService());
         new SimulationController(simulation, dashboardPanel.getControlBar(), dashboardPanel.getMetrics());
         new NavigationController(this, violationController);
-        new PrintController(this, new LogPrinter());
+        PrintController printController = new PrintController(this, new LogPrinter());
+        ViolationWorkflowService workflow = new ViolationWorkflowService();
+        new EmailController(this, violationController, printController, workflow);
+        new DatabaseController(this, new KendaraanService());
     }
 
     /** Pindah layar; dipanggil oleh NavigationController nanti. */
@@ -71,4 +82,5 @@ public class DashboardFrame extends JFrame {
     public SimulationPanel getSimulation() { return simulation; }
     public DashboardPanel getDashboardPanel() { return dashboardPanel; }
     public ViolationListPanel getListPanel() { return listPanel; }
+    public DatabasePanel getDatabasePanel() { return databasePanel; }
 }

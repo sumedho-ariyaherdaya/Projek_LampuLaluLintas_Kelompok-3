@@ -4,7 +4,7 @@ import com.example.trafficlightsim.view.Theme;
 import java.awt.*;
 import javax.swing.JButton;
 
-/** Tombol sudut membulat dengan efek hover dan tekan. */
+/** Tombol sudut membulat dengan gradasi halus serta efek hover dan tekan. */
 public class RoundedButton extends JButton {
     private final Color base;
     private final Color outline;
@@ -28,6 +28,11 @@ public class RoundedButton extends JButton {
         return new RoundedButton(text, background, Color.WHITE, null);
     }
 
+    /** Tombol emas bergradasi dengan teks marun (kontras lebih baik daripada teks putih di atas emas). */
+    public static RoundedButton gold(String text) {
+        return new RoundedButton(text, Theme.GOLD, Theme.MAROON_DEEP, null);
+    }
+
     /** Tombol putih bergaris navy (aksi sekunder). */
     public static RoundedButton outline(String text) {
         return new RoundedButton(text, Color.WHITE, Theme.NAVY, Theme.NAVY);
@@ -46,10 +51,15 @@ public class RoundedButton extends JButton {
     @Override protected void paintComponent(Graphics g0) {
         Graphics2D g = (Graphics2D) g0.create();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        if (!isEnabled()) g.setComposite(AlphaComposite.SrcOver.derive(0.45f));
         Color fill = base;
         if (getModel().isPressed()) fill = fill.darker().darker();
         else if (getModel().isRollover()) fill = fill.darker();
-        g.setColor(fill);
+        // Gradasi halus: sedikit lebih terang di atas, sedikit lebih gelap di bawah (tombol putih menuju krem).
+        boolean white = fill.equals(Color.WHITE);
+        Color top = white ? Color.WHITE : Theme.mix(fill, Color.WHITE, 0.14f);
+        Color bottom = white ? Theme.GOLD_SOFT : Theme.mix(fill, Color.BLACK, 0.12f);
+        g.setPaint(new GradientPaint(0, 0, top, 0, getHeight(), bottom));
         g.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 12, 12);
         if (outline != null) {
             g.setColor(outline);

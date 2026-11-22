@@ -5,6 +5,9 @@ import com.example.trafficlightsim.model.ViolationRecord;
 import com.example.trafficlightsim.view.component.HeaderBar;
 import com.example.trafficlightsim.view.component.RoundedButton;
 import com.example.trafficlightsim.view.component.RoundedPanel;
+import com.example.trafficlightsim.view.component.RowActionCell;
+import com.example.trafficlightsim.view.component.TabStyle;
+import com.example.trafficlightsim.view.component.TableStyler;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -13,7 +16,10 @@ import java.util.function.Consumer;
 import javax.swing.*;
 import javax.swing.table.*;
 
-/** Layar "Daftar Pelanggaran": pencarian, filter, dan tabel dengan tombol Cetak Log di setiap baris. */
+/**
+ * Layar "Daftar Pelanggaran". Terdiri dari tiga tab: Daftar Pelanggaran (pencarian, filter, tabel dengan tombol
+ * Cetak Log dan Hapus di setiap baris), Kotak Masuk (simulasi penerima email), dan Tinjau Sanggahan (operator).
+ */
 public class ViolationListPanel extends JPanel {
     private final ViolationTableModel tableModel = new ViolationTableModel();
     private final JTable table = new JTable(tableModel);
@@ -22,6 +28,11 @@ public class ViolationListPanel extends JPanel {
     private final RoundedButton searchButton = RoundedButton.filled("Cari", Theme.TEAL);
     private final RoundedButton backButton = RoundedButton.onDark("Kembali ke simulasi");
     private Consumer<ViolationRecord> onPrintRow;
+    private Consumer<ViolationRecord> onDeleteRow;
+    private final RowActionCell actionCell = new RowActionCell("Cetak Log", 100);
+    private final InboxPanel inboxPanel = new InboxPanel();
+    private final DisputeReviewPanel reviewPanel = new DisputeReviewPanel();
+    private final JTabbedPane tabs = new JTabbedPane();
     private boolean resettingFilterBox; // mencegah pengembalian kotak FILTER ke "FILTER" menghapus filter yang baru dipasang
 
     private TableRowSorter<ViolationTableModel> rowSorter;
@@ -33,17 +44,25 @@ public class ViolationListPanel extends JPanel {
         header.setTrailing(backButton);
         add(header, BorderLayout.NORTH);
 
-        JPanel body = new JPanel(new BorderLayout(0, 16));
+        JPanel listTab = new JPanel(new BorderLayout(0, 16));
+        listTab.setOpaque(false);
+        listTab.add(buildToolbar(), BorderLayout.NORTH);
+        listTab.add(buildTableCard(), BorderLayout.CENTER);
+
+        TabStyle.apply(tabs);
+        tabs.addTab("Daftar Pelanggaran", listTab);
+        tabs.addTab("Kotak Masuk", inboxPanel);
+        tabs.addTab("Tinjau Sanggahan", reviewPanel);
+        JPanel body = new JPanel(new BorderLayout());
         body.setOpaque(false);
-        body.setBorder(Theme.padding(24, 32, 24, 32));
-        body.add(buildToolbar(), BorderLayout.NORTH);
-        body.add(buildTableCard(), BorderLayout.CENTER);
+        body.setBorder(Theme.padding(20, 32, 24, 32));
+        body.add(tabs, BorderLayout.CENTER);
         add(body, BorderLayout.CENTER);
 
         // --- AKTIFKAN ROW SORTER UNTUK PENCARIAN & SORTING ---
         rowSorter = new TableRowSorter<>(tableModel);
         // Kolom denda berisi teks "Rp1.000.000"; urutkan berdasarkan angkanya.
-        rowSorter.setComparator(4, (a, b) -> Long.compare(rupiahToLong(a), rupiahToLong(b)));
+        rowSorter.setComparator(ViolationTableModel.COL_FINE, (a, b) -> Long.compare(rupiahToLong(a), rupiahToLong(b)));
         table.setRowSorter(rowSorter);
 
         // Simpan referensi kolom asli
@@ -66,7 +85,16 @@ public class ViolationListPanel extends JPanel {
         if (keyword.isEmpty()) {
             rowSorter.setRowFilter(null);
         } else {
-            rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(keyword)));
+            // Mencari di semua kolom yang tampil; jalur (tidak lagi punya kolom) tetap ikut dicari.
+            final String needle = keyword.toLowerCase();
+            rowSorter.setRowFilter(new RowFilter<ViolationTableModel, Integer>() {
+                @Override public boolean include(Entry<? extends ViolationTableModel, ? extends Integer> e) {
+                    for (int i = 0; i < ViolationTableModel.ACTION_COLUMN; i++) {
+                        if (e.getStringValue(i).toLowerCase().contains(needle)) return true;
+                    }
+                    return e.getModel().getRecord(e.getIdentifier()).getJalur().getLabel().toLowerCase().contains(needle);
+                }
+            });
         }
     }
 
@@ -83,7 +111,7 @@ public class ViolationListPanel extends JPanel {
             case "PELANGGARAN": {
                 // Munculkan pilihan jenis pelanggaran
                 String[] options = {"Semua", "Tidak menggunakan helm", "Tidak ada plat nomor", 
-                    "Knalpot brong", "Melebihi kecepatan", "Melanggar lalin", "Bonceng 3+", "Tanpa sabuk pengaman"};
+                    "Knalpot brong", "Melebihi kecepatan", "Melanggar lalin", "Bonceng 3+", "Tanpa sabuk pengaman", "Pelanggaran lainnya"};
                 String choice = (String) JOptionPane.showInputDialog(
                     this, "Pilih Pelanggaran:", "Filter Pelanggaran",
                     JOptionPane.QUESTION_MESSAGE, null, options, options[0]
@@ -92,8 +120,8 @@ public class ViolationListPanel extends JPanel {
                     if ("Semua".equals(choice)) {
                         rowSorter.setRowFilter(null);
                     } else {
-                        // Kolom Pelanggaran berada di indeks 1
-                        rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(choice), 1));
+                        // Kolom Pelanggaran
+                        rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(choice), ViolationTableModel.COL_VIOLATION));
                     }
                 }
                 break;
@@ -107,11 +135,11 @@ public class ViolationListPanel extends JPanel {
                 if (choice != null) {
                     java.util.List<RowSorter.SortKey> sortKeys = new java.util.ArrayList<>();
                     if ("Dari yang Terbaru".equals(choice)) {
-                        // Kolom Waktu di indeks 2, urut turun (DESCENDING)
-                        sortKeys.add(new RowSorter.SortKey(2, SortOrder.DESCENDING));
+                        // Kolom Waktu, urut turun (DESCENDING)
+                        sortKeys.add(new RowSorter.SortKey(ViolationTableModel.COL_TIME, SortOrder.DESCENDING));
                     } else {
                         // Urut naik (ASCENDING)
-                        sortKeys.add(new RowSorter.SortKey(2, SortOrder.ASCENDING));
+                        sortKeys.add(new RowSorter.SortKey(ViolationTableModel.COL_TIME, SortOrder.ASCENDING));
                     }
                     rowSorter.setSortKeys(sortKeys);
                 }
@@ -127,8 +155,13 @@ public class ViolationListPanel extends JPanel {
                     if ("Semua".equals(choice)) {
                         rowSorter.setRowFilter(null);
                     } else {
-                        // Kolom Jalur berada di indeks 3
-                        rowSorter.setRowFilter(RowFilter.regexFilter("^" + java.util.regex.Pattern.quote(choice) + "$", 3));
+                        // Kolom Jalur sudah tidak ditampilkan; disaring langsung dari data catatan.
+                        final String jalurDipilih = choice;
+                        rowSorter.setRowFilter(new RowFilter<ViolationTableModel, Integer>() {
+                            @Override public boolean include(Entry<? extends ViolationTableModel, ? extends Integer> e) {
+                                return e.getModel().getRecord(e.getIdentifier()).getJalur().getLabel().equals(jalurDipilih);
+                            }
+                        });
                     }
                 }
                 break;
@@ -143,8 +176,23 @@ public class ViolationListPanel extends JPanel {
                     if ("Semua".equals(choice)) {
                         rowSorter.setRowFilter(null);
                     } else {
-                        // Kolom Jenis berada di indeks 5
-                        rowSorter.setRowFilter(RowFilter.regexFilter("^" + java.util.regex.Pattern.quote(choice) + "$", 5));
+                        // Kolom Jenis
+                        rowSorter.setRowFilter(RowFilter.regexFilter("^" + java.util.regex.Pattern.quote(choice) + "$", ViolationTableModel.COL_KIND));
+                    }
+                }
+                break;
+            }
+            case "STATUS": {
+                String[] options = {"Semua", "Belum Dikirim", "Terkirim", "Diterima", "Disanggah", "Selesai"};
+                String choice = (String) JOptionPane.showInputDialog(
+                    this, "Pilih Status:", "Filter Status",
+                    JOptionPane.QUESTION_MESSAGE, null, options, options[0]
+                );
+                if (choice != null) {
+                    if ("Semua".equals(choice)) {
+                        rowSorter.setRowFilter(null);
+                    } else {
+                        rowSorter.setRowFilter(RowFilter.regexFilter("^" + java.util.regex.Pattern.quote(choice) + "$", ViolationTableModel.COL_STATUS));
                     }
                 }
                 break;
@@ -166,7 +214,7 @@ public class ViolationListPanel extends JPanel {
     private JComponent buildToolbar() {
         Theme.styleInput(searchField);
         searchField.setPreferredSize(new Dimension(300, 44));
-        searchField.setToolTipText("Cari plat atau pelanggaran");
+        searchField.setToolTipText("Cari ID, plat, pemilik, pelanggaran, atau jalur");
         
         // Filter
         filterBox.addItem("FILTER");
@@ -174,6 +222,7 @@ public class ViolationListPanel extends JPanel {
         filterBox.addItem("WAKTU");
         filterBox.addItem("JALUR");
         filterBox.addItem("JENIS");
+        filterBox.addItem("STATUS");
         
         // Filter Style
         Theme.styleInput(filterBox);
@@ -195,38 +244,13 @@ public class ViolationListPanel extends JPanel {
     }
 
     private JComponent buildTableCard() {
-        table.setRowHeight(44);
-        table.setFont(Theme.BODY);
-        table.setForeground(Theme.TEXT);
-        table.setShowVerticalLines(false);
-        table.setShowHorizontalLines(true);
-        table.setGridColor(Theme.TABLE_LINE);
-        table.setIntercellSpacing(new Dimension(0, 1));
-        table.setSelectionBackground(Theme.TABLE_SELECTION);
-        table.setSelectionForeground(Theme.TEXT);
-        table.setFillsViewportHeight(true);
-        
-        table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
-        
-        table.setDefaultRenderer(Object.class, new CellRenderer());
-        JTableHeader th = table.getTableHeader();
-        th.setDefaultRenderer(new HeaderRenderer());
-        th.setReorderingAllowed(false);
-        th.setPreferredSize(new Dimension(10, 44));
-        int[] widths = {140, 320, 180, 90, 120, 120, 140};
+        TableStyler.apply(table, ViolationTableModel.COL_ID);
+        TableStyler.alignHeaderRight(table, ViolationTableModel.ACTION_COLUMN);
+        // ID, Plat, Pemilik, Pelanggaran, Waktu, Denda, Jenis, Status, Aksi
+        int[] widths = {100, 90, 170, 250, 160, 100, 135, 120, actionCell.preferredColumnWidth()};
         for (int i = 0; i < widths.length; i++) table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
-        installRowPrintButton();
-
-        JScrollPane scroll = new JScrollPane(table);
-        scroll.setColumnHeaderView(th);
-        scroll.setBorder(BorderFactory.createEmptyBorder());
-        scroll.getViewport().setBackground(Color.WHITE);
-
-        RoundedPanel card = new RoundedPanel(16, Theme.CARD, Theme.BORDER);
-        card.setLayout(new BorderLayout());
-        card.setBorder(Theme.padding(1));
-        card.add(scroll, BorderLayout.CENTER);
-        return card;
+        installRowButtons();
+        return TableStyler.card(table);
     }
 
     public void setRecords(List<ViolationRecord> records) { tableModel.setRecords(records); }
@@ -234,21 +258,28 @@ public class ViolationListPanel extends JPanel {
     /** Aksi yang dijalankan saat tombol "Cetak Log" pada sebuah baris ditekan (diisi PrintController). */
     public void setOnPrintRow(Consumer<ViolationRecord> action) { this.onPrintRow = action; }
 
-    /** Memasang tombol "Cetak Log" di kolom terakhir; klik pada sel itu membuka log baris tersebut. */
-    private void installRowPrintButton() {
-        table.getColumnModel().getColumn(ViolationTableModel.ACTION_COLUMN).setCellRenderer(new PrintButtonRenderer());
+    /** Aksi yang dijalankan saat tombol hapus (tong sampah) pada sebuah baris ditekan (diisi ViolationController). */
+    public void setOnDeleteRow(Consumer<ViolationRecord> action) { this.onDeleteRow = action; }
+
+    /** Memasang tombol "Cetak Log" dan tong sampah di kolom terakhir; klik pada sel dikenali lewat RowActionCell. */
+    private void installRowButtons() {
+        table.getColumnModel().getColumn(ViolationTableModel.ACTION_COLUMN).setCellRenderer(actionCell);
         table.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) {
                 int row = table.rowAtPoint(e.getPoint());
                 int col = table.columnAtPoint(e.getPoint());
-                if (row < 0 || col != ViolationTableModel.ACTION_COLUMN || onPrintRow == null) return;
-                onPrintRow.accept(tableModel.getRecord(table.convertRowIndexToModel(row)));
+                if (row < 0 || col != ViolationTableModel.ACTION_COLUMN) return;
+                int hit = actionCell.hit(table, row, col, e.getPoint());
+                ViolationRecord record = tableModel.getRecord(table.convertRowIndexToModel(row));
+                if (hit == 1 && onPrintRow != null) onPrintRow.accept(record);
+                else if (hit == 2 && onDeleteRow != null) onDeleteRow.accept(record);
             }
         });
         table.addMouseMotionListener(new MouseAdapter() {
             @Override public void mouseMoved(MouseEvent e) {
-                boolean overButton = table.rowAtPoint(e.getPoint()) >= 0
-                        && table.columnAtPoint(e.getPoint()) == ViolationTableModel.ACTION_COLUMN;
+                int row = table.rowAtPoint(e.getPoint());
+                int col = table.columnAtPoint(e.getPoint());
+                boolean overButton = col == ViolationTableModel.ACTION_COLUMN && actionCell.hit(table, row, col, e.getPoint()) != 0;
                 table.setCursor(Cursor.getPredefinedCursor(overButton ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR));
             }
         });
@@ -260,67 +291,7 @@ public class ViolationListPanel extends JPanel {
     public JComboBox<Object> getFilterBox() { return filterBox; }
     public JButton getSearchButton() { return searchButton; }
     public JButton getBackButton() { return backButton; }
-
-    /** Baris belang dengan teks plat tebal. */
-    private static class CellRenderer extends DefaultTableCellRenderer {
-        @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean sel,
-                                                                 boolean focus, int row, int col) {
-            super.getTableCellRendererComponent(t, v, sel, false, row, col);
-            setBorder(Theme.padding(0, 16, 0, 16));
-            setFont(col == 0 ? Theme.BODY_BOLD : Theme.BODY);
-            setForeground(Theme.TEXT);
-            setBackground(sel ? Theme.TABLE_SELECTION : row % 2 == 0 ? Color.WHITE : Theme.TABLE_STRIPE);
-            return this;
-        }
-    }
-
-    /** Menggambar tombol "Cetak Log" di sel; klik ditangani oleh mouse listener di installRowPrintButton(). */
-    private static class PrintButtonRenderer implements TableCellRenderer {
-        // Ubah GridBagLayout menjadi FlowLayout dengan alignment RIGHT dan padding kanan
-        private final JPanel cell = new JPanel(new FlowLayout(FlowLayout.RIGHT, 16, 6));
-        private final RoundedButton button = new RoundedButton("Cetak Log", Theme.NAVY, Color.WHITE, null) {
-            @Override public Dimension getPreferredSize() { return new Dimension(126, 32); }
-            @Override public Dimension getMinimumSize() { return new Dimension(126, 32); }
-        };
-
-        PrintButtonRenderer() {
-            cell.add(button);
-        }
-
-        @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean sel,
-                                                                 boolean focus, int row, int col) {
-            cell.setBackground(sel ? Theme.TABLE_SELECTION : row % 2 == 0 ? Color.WHITE : Theme.TABLE_STRIPE);
-            return cell;
-        }
-    }
-
-    /** Menggambar header tabel; untuk kolom aksi diset rata kanan agar sejajar dengan tombol. */
-    private static class HeaderRenderer implements TableCellRenderer {
-        private final JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 16, 0));
-        private final JLabel label = new JLabel();
-
-        HeaderRenderer() {
-            headerPanel.setOpaque(true);
-            headerPanel.setBackground(Theme.TABLE_HEADER);
-            headerPanel.setBorder(Theme.padding(0, 0, 0, 8));
-            label.setFont(Theme.BODY_BOLD);
-            label.setForeground(Theme.TEXT);
-            headerPanel.add(label);
-        }
-
-        @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean sel,
-                                                                 boolean focus, int row, int col) {
-            label.setText(v != null ? v.toString() : "");
-            
-            // Jika ini kolom aksi, ubah tata letak panel menjadi rata kanan
-            if (col == ViolationTableModel.ACTION_COLUMN) {
-                ((FlowLayout) headerPanel.getLayout()).setAlignment(FlowLayout.RIGHT);
-            } else {
-                ((FlowLayout) headerPanel.getLayout()).setAlignment(FlowLayout.LEFT);
-            }
-            
-            headerPanel.revalidate();
-            return headerPanel;
-        }
-    }
+    public JTabbedPane getTabs() { return tabs; }
+    public InboxPanel getInboxPanel() { return inboxPanel; }
+    public DisputeReviewPanel getReviewPanel() { return reviewPanel; }
 }

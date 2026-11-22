@@ -4,11 +4,11 @@ import com.example.trafficlightsim.view.Theme;
 import java.awt.*;
 import javax.swing.*;
 
-/** Bilah judul navy di bagian atas setiap layar. */
-public class HeaderBar extends JPanel {
+/** Bilah judul bergradasi marun-merah dengan garis emas di tepi bawah, di bagian atas setiap layar. */
+public class HeaderBar extends GradientPanel {
     public HeaderBar(String title) {
-        super(new BorderLayout());
-        setBackground(Theme.NAVY);
+        super(Theme.MAROON_DEEP, Theme.RED, true);
+        withAccent(Theme.GOLD);
         setBorder(Theme.padding(0, 32, 0, 32));
         setPreferredSize(new Dimension(10, 72));
         JLabel label = new JLabel(title);

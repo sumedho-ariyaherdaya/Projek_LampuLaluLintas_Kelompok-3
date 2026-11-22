@@ -11,7 +11,8 @@ public enum ViolationType {
     SPEEDING("Melebihi kecepatan", 150_000),
     RED_LIGHT("Melanggar lalin", 500_000),
     TRIPLE_RIDING("Bonceng 3+", 200_000),
-    NO_SEATBELT("Tanpa sabuk pengaman", 200_000);
+    NO_SEATBELT("Tanpa sabuk pengaman", 200_000),
+    OTHER("Pelanggaran lainnya", 100_000); // nominal tetap; keterangannya diisi operator saat input (lihat ViolationRecord.getOtherNote)
 
     private final String label;
     private final int fine;

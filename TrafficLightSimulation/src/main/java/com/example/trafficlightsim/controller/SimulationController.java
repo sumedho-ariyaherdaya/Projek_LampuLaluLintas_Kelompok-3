@@ -4,6 +4,7 @@ import javax.swing.Timer;
 
 import com.example.trafficlightsim.SimulationPanel;
 import com.example.trafficlightsim.model.Jalur;
+import com.example.trafficlightsim.model.SignalState;
 import com.example.trafficlightsim.view.ControlBar;
 import com.example.trafficlightsim.view.MetricsPanel;
 
@@ -31,7 +32,11 @@ public class SimulationController {
     }
 
     private void refreshMetrics() {
-    for (Jalur j : Jalur.values()) metrics.setSignal(j, simulation.getSignalState(j));
+    for (Jalur j : Jalur.values()) {
+        SignalState state = simulation.getSignalState(j);
+        metrics.setSignal(j, state);
+        metrics.setRedCountdown(j, state, simulation.getSecondsToGreen(j));
+    }
     metrics.setCountdown(simulation.getSecondsToNextChange());
     }
     

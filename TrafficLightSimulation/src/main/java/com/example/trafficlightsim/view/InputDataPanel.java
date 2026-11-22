@@ -29,6 +29,7 @@ public class InputDataPanel extends JPanel implements Scrollable {
     private final JComboBox<String> brandBox = new JComboBox<>();
     private final JComboBox<WarnaKendaraan> colorBox = new JComboBox<>(WarnaKendaraan.values());
     private final JTextField ownerField = new JTextField("-");
+    private final JTextField otherField = new JTextField(); // keterangan untuk "Pelanggaran lainnya"
     private final RoundedButton submitButton = RoundedButton.filled("Kirim", Theme.TEAL);
     private final RoundedButton cancelButton = RoundedButton.outline("Batal");
 
@@ -127,8 +128,26 @@ public class InputDataPanel extends JPanel implements Scrollable {
             violationBoxes.put(t, box);
             card.add(box);
             card.add(Box.createVerticalStrut(2));
+            if (t == ViolationType.OTHER) {
+                // Kolom keterangan hanya aktif saat "Pelanggaran lainnya" dicentang.
+                Theme.styleInput(otherField);
+                otherField.setPreferredSize(new Dimension(100, 32));
+                otherField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
+                otherField.setToolTipText("Jelaskan pelanggaran lainnya (wajib diisi)");
+                otherField.setEnabled(false);
+                otherField.setBackground(Theme.TABLE_HEADER);
+                card.add(otherField);
+                card.add(Box.createVerticalStrut(2));
+            }
         }
         return card;
+    }
+
+    /** Mengaktifkan / menonaktifkan kolom keterangan "Pelanggaran lainnya". */
+    public void setOtherFieldEnabled(boolean enabled) {
+        otherField.setEnabled(enabled);
+        otherField.setBackground(enabled ? Color.WHITE : Theme.TABLE_HEADER);
+        if (!enabled) otherField.setText("");
     }
 
     /** Mengganti pilihan merek (tanpa memilih satu pun). */
@@ -167,6 +186,7 @@ public class InputDataPanel extends JPanel implements Scrollable {
         brandBox.setSelectedIndex(-1);
         totalFineField.setText("Rp0");
         ownerField.setText("-");
+        setOtherFieldEnabled(false);
         setNoPlateMode(false);   
     }
     
@@ -179,6 +199,7 @@ public class InputDataPanel extends JPanel implements Scrollable {
     public JComboBox<String> getBrandBox() { return brandBox; }
     public JComboBox<WarnaKendaraan> getColorBox() { return colorBox; }
     public JTextField getOwnerField() { return ownerField; }
+    public JTextField getOtherField() { return otherField; }
     public JButton getSubmitButton() { return submitButton; }
     public JButton getCancelButton() { return cancelButton; }
 

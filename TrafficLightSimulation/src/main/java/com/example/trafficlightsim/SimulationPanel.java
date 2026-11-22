@@ -2,10 +2,12 @@ package com.example.trafficlightsim;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Dialog;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -18,7 +20,9 @@ import java.util.Random;
 
 import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
+import javax.swing.JDialog;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import com.example.trafficlightsim.model.Jalur;
@@ -36,6 +40,7 @@ public class SimulationPanel extends JPanel {
     private final Timer timer;
     private long pausedAt;
     private long phaseStarted = System.currentTimeMillis();
+    private JDialog inspectDialog; // jendela pemeriksaan kendaraan yang sedang terbuka (non-modal)
     private int phase = 0; // for each approach: yellow-before-green, green, yellow-before-red
 
     /** Mengisi daftar kendaraan yang akan muncul di simulasi (dipanggil DashboardFrame dari database). */
@@ -98,7 +103,21 @@ public class SimulationPanel extends JPanel {
         long remaining = Math.max(0, Math.min(phaseDuration(), phaseDuration() - (reference - phaseStarted)));
         return (int) Math.max(1, Math.ceil(remaining / 1000.0));
     }
-    private long phaseDuration() { return (phase % 3 == 1) ? 20_000 : 1_000; }
+    private long phaseDuration() { return phaseDuration(phase); }
+    private static long phaseDuration(int p) { return (p % 3 == 1) ? 20_000 : 1_000; }
+
+    /**
+     * Sisa detik sampai lampu jalur ini mulai hijau (dibulatkan ke atas); 0 jika sedang hijau.
+     * Dihitung dari sisa fase sekarang ditambah lama fase-fase berikutnya sampai fase hijau jalur tersebut.
+     */
+    public int getSecondsToGreen(Jalur jalur) {
+        int target = jalur.ordinal() * 3 + 1; // fase hijau jalur ini
+        if (phase == target) return 0;
+        long reference = timer.isRunning() ? System.currentTimeMillis() : pausedAt;
+        long ms = Math.max(0, phaseDuration() - (reference - phaseStarted));
+        for (int p = (phase + 1) % 12; p != target; p = (p + 1) % 12) ms += phaseDuration(p);
+        return (int) Math.ceil(ms / 1000.0);
+    }
     private static String namaArah(Vehicle.Direction d) { return Jalur.values()[d.ordinal()].getLabel(); }
     
     private void updateSimulation() {
@@ -277,6 +296,25 @@ public class SimulationPanel extends JPanel {
         }
     }
 
+    /**
+     * Menampilkan hasil pemeriksaan dalam jendela NON-modal: simulasi, form input, dan tombol lain tetap bisa dipakai
+     * selagi jendela terbuka. Memeriksa kendaraan lain mengganti jendela sebelumnya (tidak menumpuk).
+     */
+    private void showInspection(String message) {
+        if (inspectDialog != null) inspectDialog.dispose();
+        JOptionPane pane = new JOptionPane(message, JOptionPane.INFORMATION_MESSAGE);
+        JDialog dialog = pane.createDialog(this, "Pemeriksaan kendaraan");
+        dialog.setModalityType(Dialog.ModalityType.MODELESS);
+        dialog.setAlwaysOnTop(false);
+        // Diletakkan di sudut kiri atas area simulasi agar tidak menutupi form di panel kanan.
+        if (isShowing()) {
+            Point origin = getLocationOnScreen();
+            dialog.setLocation(origin.x + 16, origin.y + 56);
+        }
+        inspectDialog = dialog;
+        dialog.setVisible(true);
+    }
+
     private void showVehicleAt(int x, int y) {
         double s = Math.min(getWidth()/900.0,getHeight()/540.0), cx = getWidth()*.50, cy = getHeight()*.52;
         for (int i=vehicles.size()-1;i>=0;i--) {
@@ -286,13 +324,13 @@ public class SimulationPanel extends JPanel {
                 String movement=v.movement==Vehicle.Movement.RIGHT?"belok kanan":v.movement==Vehicle.Movement.LEFT?"belok kiri":"lurus";
                 String plate=v.hasVisiblePlate()?v.identity.getPlate():"Tidak terlihat (tanpa plat nomor)";
                 String report=v.violations.isEmpty()?"Tidak terdeteksi":"• "+String.join("\n• ",v.violations);
-                JOptionPane.showMessageDialog(this,type+"\n"
+                showInspection(type+"\n"
                         +"Plat nomor: "+plate+"\n"
                         +"Merek: "+v.identity.getBrand()+"\n"
                         +"Warna: "+v.identity.getColor().getLabel()+"\n\n"
                         +"Arah datang: "+namaArah(v.approach)+"\n"
                         +"Tujuan: "+namaArah(v.destination())+" ("+movement+")\n\n"
-                        +"Pelanggaran:\n"+report,"Pemeriksaan kendaraan",JOptionPane.INFORMATION_MESSAGE);
+                        +"Pelanggaran:\n"+report);
                 return;
             }
         }

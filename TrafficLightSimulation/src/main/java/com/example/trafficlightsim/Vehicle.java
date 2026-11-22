@@ -27,6 +27,7 @@ final class Vehicle {
     double progress = -500; // starts outside the intersection; increases toward the center
     boolean passed;
     boolean turned;
+    int laneIndex; // 0 is the usual lane; 1 places a paired vehicle in the adjacent lane.
 
     Vehicle(Direction direction, VehicleIdentity identity, Random random) {
         this.direction = direction;
@@ -46,7 +47,8 @@ final class Vehicle {
         } else {
             motorcycleVariant = null;
         }
-        if (random.nextInt(6) == 0) violations.add("Tidak ada plat nomor");
+        int noPlateChance = type == Type.CAR ? 2 : 6; // 50% for cars, 1 in 6 for motorcycles.
+        if (random.nextInt(noPlateChance) == 0) violations.add("Tidak ada plat nomor");
     }
 
     /** Plat terlihat kecuali kendaraan ini sedang melanggar "Tidak ada plat nomor". */
@@ -65,7 +67,7 @@ final class Vehicle {
     Rectangle2D bounds(double cx, double cy, double scale) {
         double length = (type == Type.CAR ? 48 : 38) * scale;
         double width = (type == Type.CAR ? 25 : 23) * scale;
-        double laneOffset = 27 * scale; // left-hand traffic lane, relative to direction of travel
+        double laneOffset = (laneIndex == 0 ? 27 : 62) * scale; // second lane stays on this direction's side of the road.
         double x, y, w, h;
         switch (direction) {
             case NORTH: x = cx + laneOffset - width / 2; y = cy + progress; w = width; h = length; break;

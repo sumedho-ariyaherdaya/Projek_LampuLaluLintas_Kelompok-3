@@ -4,6 +4,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dialog;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -39,6 +40,9 @@ public class SimulationPanel extends JPanel {
     private final Timer timer;
     private long pausedAt;
     private long phaseStarted = System.currentTimeMillis();
+    private final double[] pedestrianCrossingProgress = new double[4];
+    private final boolean[] pedestrianCrossed = new boolean[4];
+    private long pedestrianLastUpdated = System.currentTimeMillis();
     private JDialog inspectDialog; // jendela pemeriksaan kendaraan yang sedang terbuka (non-modal)
     private int phase = 0; // for each approach: yellow-before-green, green, yellow-before-red
 
@@ -119,6 +123,23 @@ public class SimulationPanel extends JPanel {
     }
     private static String namaArah(Vehicle.Direction d) { return Jalur.values()[d.ordinal()].getLabel(); }
     
+    private void updatePedestrianCrossings(long now) {
+        double elapsed = Math.max(0, Math.min(0.2, (now - pedestrianLastUpdated) / 1000.0));
+        pedestrianLastUpdated = now;
+        for (Vehicle.Direction direction : Vehicle.Direction.values()) {
+            int index = direction.ordinal();
+            if (isRed(direction)) {
+                if (!pedestrianCrossed[index]) {
+                    pedestrianCrossingProgress[index] = Math.min(1.0,
+                            pedestrianCrossingProgress[index] + elapsed / 8.0);
+                    pedestrianCrossed[index] = pedestrianCrossingProgress[index] >= 1.0;
+                }
+            } else {
+                pedestrianCrossingProgress[index] = 0.0;
+                pedestrianCrossed[index] = false;
+            }
+        }
+    }
     private void updateSimulation() {
         long now = System.currentTimeMillis();
         if (now - phaseStarted >= phaseDuration()) {
@@ -126,6 +147,7 @@ public class SimulationPanel extends JPanel {
         phaseStarted = now;
     }
 
+        updatePedestrianCrossings(now);
         int w = getWidth(), h = getHeight();
         double scale = Math.min(w / 900.0, h / 540.0);
         double cx = w * 0.50, cy = h * 0.52;
@@ -143,7 +165,8 @@ public class SimulationPanel extends JPanel {
                     if (identity == null) break;
                     Vehicle vehicle = new Vehicle(d, identity, random);
                     double length = (vehicle.type == Vehicle.Type.CAR ? 48 : 38) * scale;
-                    vehicle.progress = firstProgress - i * (length + 8 * scale);
+                    vehicle.laneIndex = i == 1 ? 1 : 0;
+                    vehicle.progress = i == 2 ? firstProgress - length - 8 * scale : firstProgress;
                     vehicles.add(vehicle);
                 }
             }
@@ -155,7 +178,7 @@ public class SimulationPanel extends JPanel {
             // Keep a safe following distance from the closest vehicle ahead in this lane.
             Vehicle leader = null;
             for (Vehicle other : vehicles) {
-                if (other != v && other.approach == v.approach && !other.passed
+                if (other != v && other.approach == v.approach && other.laneIndex == v.laneIndex && !other.passed
                         && other.progress > v.progress
                         && (leader == null || other.progress < leader.progress)) {
                     leader = other;
@@ -175,6 +198,7 @@ public class SimulationPanel extends JPanel {
                     v.direction = outboundTrack(v.approach, v.movement);
                     v.progress = 0;
                     v.turned = true;
+                    v.laneIndex = 0;
                 }
             }
             if (v.progress > max) v.progress = max;
@@ -217,6 +241,7 @@ public class SimulationPanel extends JPanel {
         g.setColor(new Color(76, 128, 79)); g.fillRect(0, 0, w, h);
         g.setColor(new Color(255, 255, 255, 18));
         for (int x = 15; x < w; x += 46) for (int y = 15; y < h; y += 46) g.fillOval(x, y, 2, 2);
+        drawNeighborhood(g, w, h, scale);
         g.setColor(ASPHALT); g.fillRect((int)(cx-half), 0, (int)road, h); g.fillRect(0, (int)(cy-half), w, (int)road);
         g.setColor(ROAD_MARK); g.setStroke(new BasicStroke(Math.max(1.5f, (float)(2*scale))));
         g.drawLine((int)cx, 0, (int)cx, (int)(cy-half-10*scale)); g.drawLine((int)cx, (int)(cy+half+10*scale), (int)cx, h);
@@ -224,6 +249,7 @@ public class SimulationPanel extends JPanel {
         drawCrosswalks(g, cx, cy, half, scale);
         drawSignals(g, cx, cy, half, scale);
         for (Vehicle v : vehicles) drawVehicle(g, v, cx, cy, scale);
+        drawCrossingPedestrians(g, cx, cy, half, scale);
         g.setColor(new Color(255,255,255,225)); g.setFont(new Font("SansSerif", Font.BOLD, Math.max(12,(int)(14*scale))));
         g.drawString("PERSIMPANGAN EMPAT ARAH", 18, 28);
         Vehicle.Direction active = Vehicle.Direction.values()[phase / 3];
@@ -234,6 +260,112 @@ public class SimulationPanel extends JPanel {
         g.dispose();
     }
 
+    private void drawCrossingPedestrians(Graphics2D g, double cx, double cy, double half, double s) {
+        double span = 2 * half + 16 * s;
+        long tick = System.currentTimeMillis();
+        for (Vehicle.Direction direction : Vehicle.Direction.values()) {
+            if (!isRed(direction) || pedestrianCrossed[direction.ordinal()]) continue;
+            double progress = pedestrianCrossingProgress[direction.ordinal()];
+            double gait = tick / 260.0 + direction.ordinal() * 1.4;
+            switch (direction) {
+                case NORTH:
+                    drawPedestrian(g, cx - half - 8 * s + progress * span,
+                            cy - half - 19 * s, s, new Color(43, 92, 159), gait);
+                    break;
+                case SOUTH:
+                    drawPedestrian(g, cx + half + 8 * s - progress * span,
+                            cy + half + 19 * s, s, new Color(164, 71, 88), gait);
+                    break;
+                case EAST:
+                    drawPedestrian(g, cx - half - 19 * s,
+                            cy + half + 8 * s - progress * span, s,
+                            new Color(48, 128, 94), gait);
+                    break;
+                case WEST:
+                    drawPedestrian(g, cx + half + 19 * s,
+                            cy - half - 8 * s + progress * span, s,
+                            new Color(119, 78, 151), gait);
+                    break;
+            }
+        }
+    }
+    private void drawNeighborhood(Graphics2D g, int w, int h, double s) {
+        drawShop(g, 16 * s, 20 * s, 132 * s, 86 * s, "MINI MALL",
+                new Color(239, 218, 179), new Color(172, 75, 55), s);
+        drawShop(g, w - 148 * s, 20 * s, 132 * s, 86 * s, "MARKET",
+                new Color(230, 222, 192), new Color(56, 125, 91), s);
+        drawShop(g, 16 * s, h - 106 * s, 132 * s, 86 * s, "CAFE",
+                new Color(237, 211, 184), new Color(143, 87, 58), s);
+        drawShop(g, w - 148 * s, h - 106 * s, 132 * s, 86 * s, "BAKERY",
+                new Color(236, 225, 191), new Color(178, 118, 43), s);
+
+        long tick = System.currentTimeMillis();
+        drawPedestrian(g, 182 * s, 122 * s, s, new Color(51, 90, 157), tick / 260.0);
+        drawPedestrian(g, w - 184 * s, 122 * s, s, new Color(174, 67, 91), tick / 260.0 + 1.7);
+        drawPedestrian(g, 182 * s, h - 43 * s, s, new Color(46, 119, 91), tick / 260.0 + 3.1);
+        drawPedestrian(g, w - 184 * s, h - 43 * s, s, new Color(116, 75, 151), tick / 260.0 + 4.4);
+    }
+
+    private void drawShop(Graphics2D g, double x, double y, double width, double height,
+                          String label, Color wall, Color accent, double s) {
+        int ix = (int) x, iy = (int) y, iw = (int) width, ih = (int) height;
+        int radius = Math.max(5, (int) (8 * s));
+        g.setColor(new Color(0, 0, 0, 42));
+        g.fillRoundRect(ix + (int) (3 * s), iy + (int) (4 * s), iw, ih, radius, radius);
+        g.setColor(wall);
+        g.fillRoundRect(ix, iy, iw, ih, radius, radius);
+        g.setColor(accent);
+        g.fillRoundRect(ix, iy, iw, (int) (21 * s), radius, radius);
+        g.fillRect(ix, iy + (int) (14 * s), iw, (int) (7 * s));
+
+        int signFont = Math.max(7, (int) (10 * s));
+        g.setFont(new Font("SansSerif", Font.BOLD, signFont));
+        g.setColor(Color.WHITE);
+        FontMetrics fm = g.getFontMetrics();
+        g.drawString(label, ix + (iw - fm.stringWidth(label)) / 2,
+                iy + (int) (14 * s));
+
+        int windowY = iy + (int) (31 * s);
+        int windowW = (int) (29 * s), windowH = (int) (24 * s);
+        g.setColor(new Color(128, 193, 203));
+        g.fillRoundRect(ix + (int) (12 * s), windowY, windowW, windowH, radius / 2, radius / 2);
+        g.fillRoundRect(ix + iw - (int) (12 * s) - windowW, windowY, windowW, windowH, radius / 2, radius / 2);
+        g.setColor(new Color(255, 255, 255, 125));
+        g.drawLine(ix + (int) (17 * s), windowY + (int) (4 * s),
+                ix + (int) (17 * s), windowY + windowH - (int) (4 * s));
+        g.drawLine(ix + iw - (int) (17 * s), windowY + (int) (4 * s),
+                ix + iw - (int) (17 * s), windowY + windowH - (int) (4 * s));
+
+        g.setColor(new Color(105, 76, 56));
+        g.fillRoundRect(ix + iw / 2 - (int) (10 * s), iy + ih - (int) (31 * s),
+                (int) (20 * s), (int) (31 * s), radius / 2, radius / 2);
+        g.setColor(new Color(241, 201, 102));
+        g.fillOval(ix + iw / 2 + (int) (4 * s), iy + ih - (int) (17 * s),
+                Math.max(2, (int) (3 * s)), Math.max(2, (int) (3 * s)));
+    }
+
+    private void drawPedestrian(Graphics2D g, double x, double y, double s, Color shirt, double phase) {
+        double stride = Math.sin(phase) * 2.2 * s;
+        double head = 5.5 * s;
+        double bodyW = 6.5 * s, bodyH = 9 * s;
+        g.setColor(new Color(0, 0, 0, 40));
+        g.fillOval((int) (x - 5 * s), (int) (y + 15 * s), (int) (10 * s), (int) (3 * s));
+        g.setColor(new Color(227, 187, 145));
+        g.fillOval((int) (x - head / 2), (int) y, (int) head, (int) head);
+        g.setColor(shirt);
+        g.fillRoundRect((int) (x - bodyW / 2), (int) (y + 5 * s),
+                (int) bodyW, (int) bodyH, (int) (3 * s), (int) (3 * s));
+        g.setStroke(new BasicStroke(Math.max(1f, (float) (1.5 * s)), BasicStroke.CAP_ROUND,
+                BasicStroke.JOIN_ROUND));
+        g.drawLine((int) x, (int) (y + 13 * s), (int) (x - 2 * s + stride),
+                (int) (y + 18 * s));
+        g.drawLine((int) x, (int) (y + 13 * s), (int) (x + 2 * s - stride),
+                (int) (y + 18 * s));
+        g.drawLine((int) (x - 1 * s), (int) (y + 14 * s), (int) (x - 2 * s - stride),
+                (int) (y + 19 * s));
+        g.drawLine((int) (x + 1 * s), (int) (y + 14 * s), (int) (x + 2 * s + stride),
+                (int) (y + 19 * s));
+    }
     private void drawCrosswalks(Graphics2D g, double cx, double cy, double half, double s) {
         g.setColor(new Color(244, 244, 232));
         int stripe = Math.max(2, (int) (4 * s));
@@ -322,6 +454,26 @@ public class SimulationPanel extends JPanel {
                 int bikeLength = Math.max(1, (int) (38 * s));
                 bikeGraphics.drawImage(sprite, -bikeWidth / 2, -bikeLength / 2, bikeWidth, bikeLength, null);
                 bikeGraphics.dispose();
+                return;
+            }
+        }
+        if (v.type == Vehicle.Type.CAR) {
+            boolean horizontal = v.direction == Vehicle.Direction.EAST || v.direction == Vehicle.Direction.WEST;
+            Image sprite = CarSprites.get(v.identity, horizontal);
+            if (sprite != null) {
+                Graphics2D carGraphics = (Graphics2D) g.create();
+                carGraphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                        RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                carGraphics.translate(b.getCenterX(), b.getCenterY());
+                // The vertical sheet faces down and the horizontal sheet faces right.
+                if (v.direction == Vehicle.Direction.SOUTH || v.direction == Vehicle.Direction.EAST) {
+                    carGraphics.rotate(Math.PI);
+                }
+                int carWidth = Math.max(1, (int) Math.round((horizontal ? 48 : 25) * s));
+                int carHeight = Math.max(1, (int) Math.round((horizontal ? 25 : 48) * s));
+                carGraphics.drawImage(sprite, -carWidth / 2, -carHeight / 2,
+                        carWidth, carHeight, null);
+                carGraphics.dispose();
                 return;
             }
         }

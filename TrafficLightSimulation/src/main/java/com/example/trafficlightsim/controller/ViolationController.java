@@ -48,7 +48,7 @@ public class ViolationController {
                 : "\n\nStatus log ini \"" + r.getStatus().getLabel() + "\": riwayat pengiriman dan tanggapannya ikut terhapus.";
         int ok = JOptionPane.showConfirmDialog(frame,
                 "Hapus log " + r.getKodeLog() + "?\n"
-                + "Plat: " + r.getPlate() + "  \u2022  Pemilik: " + r.getOwnerName() + "\n"
+                + "Plat: " + r.getDisplayPlate() + "  \u2022  Pemilik: " + r.getOwnerName() + "\n"
                 + "Pelanggaran: " + r.getViolationSummary() + warning
                 + "\n\nTindakan ini tidak dapat dibatalkan. ID log tidak akan dipakai ulang.",
                 "Hapus Log Pelanggaran", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);

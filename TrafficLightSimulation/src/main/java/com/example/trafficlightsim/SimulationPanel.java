@@ -9,11 +9,15 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Point;
+import java.awt.RadialGradientPaint;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Area;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -67,7 +71,7 @@ public class SimulationPanel extends JPanel {
 
     public SimulationPanel() {
         setBackground(new Color(98, 150, 101));
-        setToolTipText("Click a car or motorcycle to inspect it");
+        setToolTipText("Klik kendaraan untuk melihat hasil pemeriksaannya");
         addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) { showVehicleAt(e.getX(), e.getY()); }
         });
@@ -228,6 +232,63 @@ public class SimulationPanel extends JPanel {
 
     private boolean isGreen(Vehicle.Direction d) { return phase % 3 == 1 && d.ordinal() == phase / 3; }
     private boolean isYellow(Vehicle.Direction d) { return (phase % 3 != 1) && d.ordinal() == phase / 3; }
+    
+    // ===== Siang / malam mengikuti jam sistem =====
+private static final Color DAY_GRASS = new Color(76, 128, 79);
+private static final Color NIGHT_GRASS = new Color(30, 56, 44);
+private static final int JAM_MALAM_MULAI = 18; // mulai malam 18.00
+private static final int JAM_MALAM_SELESAI = 6; // malam berakhir 06.00
+
+/** Hanya untuk uji coba: isi 0-23 untuk memaksa jam tertentu, -1 = pakai jam sistem. */
+static int jamUji = -1;
+
+private static boolean isNight() {
+    int hour = jamUji >= 0 ? jamUji : LocalTime.now().getHour();
+    return hour >= JAM_MALAM_MULAI || hour < JAM_MALAM_SELESAI;
+}
+
+/** Matahari dengan cahaya dan sinar yang berputar pelan; ditempatkan di rumput antara jalan dan toko kanan atas. */
+private void drawSun(Graphics2D g, int w, double s) {
+    double x = w * 0.73, y = 62 * s, r = 20 * s;
+    g.setPaint(new RadialGradientPaint((float) x, (float) y, (float) (64 * s), new float[]{0f, 1f},
+            new Color[]{new Color(255, 236, 140, 190), new Color(255, 236, 140, 0)}));
+    g.fill(new Ellipse2D.Double(x - 64 * s, y - 64 * s, 128 * s, 128 * s));
+    g.setStroke(new BasicStroke(Math.max(1.5f, (float) (2.5 * s)), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+    g.setColor(new Color(255, 205, 60));
+    
+    double spin = System.currentTimeMillis() / 4000.0;
+    for (int i = 0; i < 12; i++) {
+        double a = spin + i * Math.PI / 6;
+        g.drawLine((int) (x + Math.cos(a) * (r + 5 * s)), (int) (y + Math.sin(a) * (r + 5 * s)),
+                   (int) (x + Math.cos(a) * (r + 13 * s)), (int) (y + Math.sin(a) * (r + 13 * s)));
+    }
+    
+    g.setColor(new Color(255, 214, 70));
+    g.fill(new Ellipse2D.Double(x - r, y - r, 2 * r, 2 * r));
+    g.setColor(new Color(255, 170, 30));
+    g.draw(new Ellipse2D.Double(x - r, y - r, 2 * r, 2 * r));
+}
+
+/** Bulan sabit dengan cahaya lembut dan bintang berkelip, di posisi yang sama dengan matahari. */
+private void drawMoon(Graphics2D g, int w, double s) {
+    double x = w * 0.73, y = 62 * s, r = 20 * s;
+    g.setPaint(new RadialGradientPaint((float) x, (float) y, (float) (64 * s), new float[]{0f, 1f},
+            new Color[]{new Color(200, 215, 255, 130), new Color(200, 215, 255, 0)}));
+    g.fill(new Ellipse2D.Double(x - 64 * s, y - 64 * s, 128 * s, 128 * s));
+    Area crescent = new Area(new Ellipse2D.Double(x - r, y - r, 2 * r, 2 * r));
+    crescent.subtract(new Area(new Ellipse2D.Double(x - r + 10 * s, y - r - 5 * s, 2 * r * 0.9, 2 * r * 0.9)));
+    g.setColor(new Color(246, 244, 218));
+    g.fill(crescent);
+    
+    double[][] stars = {{-72, 8}, {-45, -20}, {48, -14}, {70, 20}, {30, 36}, {-20, 34}};
+    long t = System.currentTimeMillis();
+    for (int i = 0; i < stars.length; i++) {
+        int alpha = (int) (150 + 100 * Math.sin(t / 400.0 + i * 1.7));
+        g.setColor(new Color(255, 255, 235, Math.max(40, Math.min(255, alpha))));
+        double sz = Math.max(2, 3 * s);
+        g.fill(new Ellipse2D.Double(x + stars[i][0] * s - sz / 2, y + stars[i][1] * s - sz / 2, sz, sz));
+    }
+}
 
     @Override protected void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
@@ -238,7 +299,8 @@ public class SimulationPanel extends JPanel {
         double cx = w * 0.50, cy = h * 0.52;
         double road = Math.min(w * 0.25, h * 0.42);
         double half = road / 2;
-        g.setColor(new Color(76, 128, 79)); g.fillRect(0, 0, w, h);
+        boolean night = isNight(); // malam: 18.00-05.59, siang: 06.00-17.59 (jam sistem, sama dengan ClockLabel)
+        g.setColor(night ? NIGHT_GRASS : DAY_GRASS); g.fillRect(0, 0, w, h);
         g.setColor(new Color(255, 255, 255, 18));
         for (int x = 15; x < w; x += 46) for (int y = 15; y < h; y += 46) g.fillOval(x, y, 2, 2);
         drawNeighborhood(g, w, h, scale);
@@ -250,6 +312,16 @@ public class SimulationPanel extends JPanel {
         drawSignals(g, cx, cy, half, scale);
         for (Vehicle v : vehicles) drawVehicle(g, v, cx, cy, scale);
         drawCrossingPedestrians(g, cx, cy, half, scale);
+        
+        //Suasana Simulasi Malam dan Siang hari
+        if (night) {
+    g.setColor(new Color(8, 14, 48, 120)); g.fillRect(0, 0, w, h); // suasana malam
+    drawSignals(g, cx, cy, half, scale);                           // lampu lalu lintas tetap terang
+    drawMoon(g, w, scale);
+} else {
+    drawSun(g, w, scale);
+
+}
         g.setColor(new Color(255,255,255,225)); g.setFont(new Font("SansSerif", Font.BOLD, Math.max(12,(int)(14*scale))));
         g.drawString("PERSIMPANGAN EMPAT ARAH", 18, 28);
         Vehicle.Direction active = Vehicle.Direction.values()[phase / 3];
@@ -390,48 +462,58 @@ public class SimulationPanel extends JPanel {
         }
     }
     private void drawSignals(Graphics2D g, double cx, double cy, double half, double s) {
-        // Match the annotated compass positions in the simulation: N upper-left,
-        // E upper-right, W lower-left, and S lower-right.
-        double side = half + 14 * s;
-        double shoulder = half + 40 * s;
-        drawSignal(g, cx - side, cy - shoulder, Vehicle.Direction.NORTH, s);
-        drawSignal(g, cx + shoulder, cy - shoulder, Vehicle.Direction.EAST, s);
-        drawSignal(g, cx - side, cy + shoulder, Vehicle.Direction.WEST, s);
-        drawSignal(g, cx + shoulder, cy + shoulder, Vehicle.Direction.SOUTH, s);
+    double along = half + 30 * s;   // jarak dari tengah simpang ke lampu (di atas zebra cross)
+    double across = 12 * s;         // geser dari garis tengah jalan ke sisi lajur datang
+
+    drawSignal(g, cx + across, cy - along,  Vehicle.Direction.NORTH, s);
+    drawSignal(g, cx + along,  cy + across, Vehicle.Direction.EAST,  s);
+    drawSignal(g, cx - across, cy + along,  Vehicle.Direction.SOUTH, s);
+    drawSignal(g, cx - along,  cy - across, Vehicle.Direction.WEST,  s);
+}
+
+private void drawSignal(Graphics2D g0, double x, double y, Vehicle.Direction approach, double s) {
+    // Putar lampu agar lampu merah menghadap arah gerak kendaraan.
+    Graphics2D g = (Graphics2D) g0.create();
+    g.translate(x, y);
+    switch (approach) {
+        case NORTH: g.rotate(Math.PI); break;        // merah di bawah
+        case EAST:  g.rotate(-Math.PI / 2); break;   // merah di kiri
+        case WEST:  g.rotate(Math.PI / 2); break;    // merah di kanan
+        default: break;                              // SOUTH: merah di atas
     }
 
-    private void drawSignal(Graphics2D g, double x, double y, Vehicle.Direction approach, double s) {
-        double width = 21 * s, height = 56 * s;
-        double radius = 6.2 * s;
-        double left = x - width / 2, top = y - height / 2;
-        g.setColor(new Color(17, 21, 25));
-        g.fillRoundRect((int) left, (int) top, (int) width, (int) height,
-                (int) (7 * s), (int) (7 * s));
-        g.setColor(new Color(92, 101, 108));
-        g.setStroke(new BasicStroke(Math.max(1f, (float) (1.2 * s))));
-        g.drawRoundRect((int) left, (int) top, (int) width, (int) height,
-                (int) (7 * s), (int) (7 * s));
+    double width = 21 * s, height = 56 * s;
+    double radius = 6.2 * s;
+    double left = -width / 2, top = -height / 2;      // pusat lampu = (0,0) setelah translate
+    g.setColor(new Color(17, 21, 25));
+    g.fillRoundRect((int) left, (int) top, (int) width, (int) height,
+            (int) (7 * s), (int) (7 * s));
+    g.setColor(new Color(92, 101, 108));
+    g.setStroke(new BasicStroke(Math.max(1f, (float) (1.2 * s))));
+    g.drawRoundRect((int) left, (int) top, (int) width, (int) height,
+            (int) (7 * s), (int) (7 * s));
 
-        Color[] active = {
-            isRed(approach) ? new Color(255, 65, 65) : new Color(86, 36, 39),
-            isYellow(approach) ? new Color(255, 207, 58) : new Color(83, 69, 37),
-            isGreen(approach) ? new Color(62, 235, 119) : new Color(34, 75, 49)
-        };
-        for (int i = 0; i < active.length; i++) {
-            double lampY = top + (12 + i * 16) * s;
-            g.setColor(active[i]);
-            g.fillOval((int) (x - radius), (int) (lampY - radius),
-                    (int) (radius * 2), (int) (radius * 2));
-            boolean lit = (i == 0 && isRed(approach))
-                    || (i == 1 && isYellow(approach))
-                    || (i == 2 && isGreen(approach));
-            if (lit) {
-                g.setColor(new Color(255, 255, 255, 105));
-                g.fillOval((int) (x - radius * .48), (int) (lampY - radius * .62),
-                        (int) (radius * .62), (int) (radius * .42));
-            }
+    Color[] active = {
+        isRed(approach) ? new Color(255, 65, 65) : new Color(86, 36, 39),
+        isYellow(approach) ? new Color(255, 207, 58) : new Color(83, 69, 37),
+        isGreen(approach) ? new Color(62, 235, 119) : new Color(34, 75, 49)
+    };
+    for (int i = 0; i < active.length; i++) {
+        double lampY = top + (12 + i * 16) * s;
+        g.setColor(active[i]);
+        g.fillOval((int) (-radius), (int) (lampY - radius),
+                (int) (radius * 2), (int) (radius * 2));
+        boolean lit = (i == 0 && isRed(approach))
+                || (i == 1 && isYellow(approach))
+                || (i == 2 && isGreen(approach));
+        if (lit) {
+            g.setColor(new Color(255, 255, 255, 105));
+            g.fillOval((int) (-radius * .48), (int) (lampY - radius * .62),
+                    (int) (radius * .62), (int) (radius * .42));
         }
     }
+    g.dispose();
+}
 
     private boolean isRed(Vehicle.Direction d) {
         return !isGreen(d) && !isYellow(d);

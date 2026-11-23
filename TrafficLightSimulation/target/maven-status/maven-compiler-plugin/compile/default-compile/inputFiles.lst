@@ -1,60 +1,60 @@
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\BikeSprites.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\CarSprites.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\controller\DatabaseController.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\controller\EmailController.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\controller\NavigationController.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\controller\PrintController.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\controller\SimulationController.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\controller\ViolationController.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\DashboardFrame.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\database\Database.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\database\KendaraanDao.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\database\VehicleSeed.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\Main.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\model\Jalur.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\model\JenisKendaraan.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\model\RiwayatLog.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\model\SignalState.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\model\StatusPelanggaran.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\model\VehicleIdentity.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\model\ViolationRecord.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\model\ViolationType.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\model\WarnaKendaraan.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\MusicPlayer.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\service\KendaraanService.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\service\LogPrinter.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\service\ViolationLogService.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\service\ViolationWorkflowService.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\SimulationPanel.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\util\Rupiah.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\Vehicle.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\ClockLabel.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\GradientPanel.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\HeaderBar.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\RoundedButton.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\RoundedPanel.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\RowActionCell.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\StatusLamp.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\TableStyler.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\TabStyle.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\TrashIcon.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\ControlBar.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\DashboardPanel.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\DatabasePanel.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\DisputeReviewPanel.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\InboxPanel.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\InputDataDialog.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\InputDataPanel.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\MetricsPanel.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\PreviewData.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\ReceiptDialog.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\ReceiptPanel.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\RecordListModel.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\Theme.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\TotalViolationCard.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\VehicleFormDialog.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\VehicleStatusPanel.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\VehicleTableModel.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\ViewPreview.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\ViolationListPanel.java
-C:\Users\zakif\OneDrive\Desktop\Univ\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\ViolationTableModel.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\BikeSprites.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\CarSprites.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\controller\DatabaseController.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\controller\EmailController.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\controller\NavigationController.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\controller\PrintController.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\controller\SimulationController.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\controller\ViolationController.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\DashboardFrame.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\database\Database.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\database\KendaraanDao.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\database\VehicleSeed.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\Main.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\model\Jalur.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\model\JenisKendaraan.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\model\RiwayatLog.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\model\SignalState.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\model\StatusPelanggaran.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\model\VehicleIdentity.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\model\ViolationRecord.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\model\ViolationType.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\model\WarnaKendaraan.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\MusicPlayer.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\service\KendaraanService.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\service\LogPrinter.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\service\ViolationLogService.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\service\ViolationWorkflowService.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\SimulationPanel.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\util\Rupiah.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\Vehicle.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\ClockLabel.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\GradientPanel.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\HeaderBar.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\RoundedButton.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\RoundedPanel.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\RowActionCell.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\StatusLamp.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\TableStyler.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\TabStyle.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\component\TrashIcon.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\ControlBar.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\DashboardPanel.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\DatabasePanel.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\DisputeReviewPanel.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\InboxPanel.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\InputDataDialog.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\InputDataPanel.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\MetricsPanel.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\PreviewData.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\ReceiptDialog.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\ReceiptPanel.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\RecordListModel.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\Theme.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\TotalViolationCard.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\VehicleFormDialog.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\VehicleStatusPanel.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\VehicleTableModel.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\ViewPreview.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\ViolationListPanel.java
+D:\PBO\Project Final\Projek_LampuLaluLintas_Kelompok-3\TrafficLightSimulation\src\main\java\com\example\trafficlightsim\view\ViolationTableModel.java

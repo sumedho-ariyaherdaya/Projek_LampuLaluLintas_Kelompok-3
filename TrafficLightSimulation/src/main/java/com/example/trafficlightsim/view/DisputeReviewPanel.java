@@ -19,7 +19,7 @@ public class DisputeReviewPanel extends JPanel {
         switch (c) {
             case 0: return r.getKodeLog();
             case 1: return r.getOwnerName();
-            case 2: return r.getPlate();
+            case 2: return r.getDisplayPlate();
             case 3: return r.getViolationSummary();
             case 4: return Rupiah.format(r.getTotalFine());
             default: return TIME.format(r.getTime());
@@ -141,7 +141,7 @@ public class DisputeReviewPanel extends JPanel {
 
     /** Menampilkan satu sanggahan beserta alasannya. */
     public void showDispute(ViolationRecord r, String alasan) {
-        title.setText(r.getKodeLog() + " \u2022 " + r.getPlate());
+        title.setText(r.getKodeLog() + " \u2022 " + r.getDisplayPlate());
         info.setText("Pemilik: " + r.getOwnerName() + "\nEmail: " + r.getEmailTujuan()
                 + "\nPelanggaran: " + r.getViolationSummary() + " (" + Rupiah.format(r.getTotalFine()) + ")");
         reason.setText(alasan == null || alasan.isEmpty() ? "(alasan tidak ditemukan)" : alasan);

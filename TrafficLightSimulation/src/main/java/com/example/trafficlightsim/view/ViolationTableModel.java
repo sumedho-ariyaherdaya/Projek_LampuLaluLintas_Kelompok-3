@@ -40,7 +40,7 @@ public class ViolationTableModel extends AbstractTableModel {
         ViolationRecord r = records.get(row);
         switch (col) {
             case COL_ID: return r.getKodeLog().isEmpty() ? "-" : r.getKodeLog();
-            case COL_PLATE: return r.getPlate();
+            case COL_PLATE: return r.getDisplayPlate();
             case COL_OWNER: return r.getOwnerName();
             case COL_VIOLATION: return r.getViolationSummary();
             case COL_TIME: return TIME.format(r.getTime());

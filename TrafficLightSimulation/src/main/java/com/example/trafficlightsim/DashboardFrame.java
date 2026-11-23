@@ -42,7 +42,7 @@ public class DashboardFrame extends JFrame {
     private final DatabasePanel databasePanel = new DatabasePanel();
 
     public DashboardFrame() {
-        super("Simulasi Lalu Lintas 4 Jalur");
+        super("Simulasi Lalu Lintas Simpang 4");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         // Ukuran awal simulasi tetap seperti kode sebelumnya: 70% lebar dan 60% tinggi layar.

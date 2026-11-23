@@ -27,7 +27,7 @@ public class DashboardPanel extends JPanel {
     public DashboardPanel(SimulationPanel simulation) {
         super(new BorderLayout());
         setBackground(Theme.BACKGROUND);
-        HeaderBar header = new HeaderBar("Simulasi Lalu Lintas 4 Jalur");
+        HeaderBar header = new HeaderBar("Simulasi Lalu Lintas Simpang 4");
         header.setTrailing(new ClockLabel()); // jam & tanggal realtime dari waktu sistem
         add(header, BorderLayout.NORTH);
 

@@ -309,8 +309,9 @@ private void drawMoon(Graphics2D g, int w, double s) {
         g.drawLine((int)cx, 0, (int)cx, (int)(cy-half-10*scale)); g.drawLine((int)cx, (int)(cy+half+10*scale), (int)cx, h);
         g.drawLine(0, (int)cy, (int)(cx-half-10*scale), (int)cy); g.drawLine((int)(cx+half+10*scale), (int)cy, w, (int)cy);
         drawCrosswalks(g, cx, cy, half, scale);
-        drawSignals(g, cx, cy, half, scale);
+        drawMedians(g, w, h, cx, cy, half, scale);                 // pembatas jalan (baru)
         for (Vehicle v : vehicles) drawVehicle(g, v, cx, cy, scale);
+        drawSignals(g, cx, cy, half, scale);                       // lampu + tiang di atas kendaraan
         drawCrossingPedestrians(g, cx, cy, half, scale);
         
         //Suasana Simulasi Malam dan Siang hari
@@ -461,59 +462,130 @@ private void drawMoon(Graphics2D g, int w, double s) {
             g.fillRect((int) (cx + inner), y, bandLength, stripe);
         }
     }
-    private void drawSignals(Graphics2D g, double cx, double cy, double half, double s) {
-    double along = half + 30 * s;   // jarak dari tengah simpang ke lampu (di atas zebra cross)
-    double across = 12 * s;         // geser dari garis tengah jalan ke sisi lajur datang
-
-    drawSignal(g, cx + across, cy - along,  Vehicle.Direction.NORTH, s);
-    drawSignal(g, cx + along,  cy + across, Vehicle.Direction.EAST,  s);
-    drawSignal(g, cx - across, cy + along,  Vehicle.Direction.SOUTH, s);
-    drawSignal(g, cx - along,  cy - across, Vehicle.Direction.WEST,  s);
-}
-
-private void drawSignal(Graphics2D g0, double x, double y, Vehicle.Direction approach, double s) {
-    // Putar lampu agar lampu merah menghadap arah gerak kendaraan.
-    Graphics2D g = (Graphics2D) g0.create();
-    g.translate(x, y);
-    switch (approach) {
-        case NORTH: g.rotate(Math.PI); break;        // merah di bawah
-        case EAST:  g.rotate(-Math.PI / 2); break;   // merah di kiri
-        case WEST:  g.rotate(Math.PI / 2); break;    // merah di kanan
-        default: break;                              // SOUTH: merah di atas
+        private void drawSignals(Graphics2D g, double cx, double cy, double half, double s) {
+        double along = half + 26 * s;   // jarak lampu dari tengah simpang (di atas zebra cross)
+        double across = 52 * s;         // geser dari garis tengah jalan ke tengah lajur datang
+        double edge = half + 6 * s;     // posisi tiang di rumput pojok, tepat di luar tepi jalan
+        // Tiap lampu digantung di lengan tiang yang menyilang jalan dari pojok rumput sisi lajur datangnya.
+        // (lampu, arah lengan tiang ke pojok, arah ujung tiang menjauhi simpang)
+        drawSignal(g, cx + across, cy - along, cx + edge,   cy - along,   0, -1, Vehicle.Direction.NORTH, s);
+        drawSignal(g, cx + along,  cy + across, cx + along,  cy + edge,   1,  0, Vehicle.Direction.EAST,  s);
+        drawSignal(g, cx - across, cy + along,  cx - edge,   cy + along,  0,  1, Vehicle.Direction.SOUTH, s);
+        drawSignal(g, cx - along,  cy - across, cx - along,  cy - edge,  -1,  0, Vehicle.Direction.WEST,  s);
     }
 
-    double width = 21 * s, height = 56 * s;
-    double radius = 6.2 * s;
-    double left = -width / 2, top = -height / 2;      // pusat lampu = (0,0) setelah translate
-    g.setColor(new Color(17, 21, 25));
-    g.fillRoundRect((int) left, (int) top, (int) width, (int) height,
-            (int) (7 * s), (int) (7 * s));
-    g.setColor(new Color(92, 101, 108));
-    g.setStroke(new BasicStroke(Math.max(1f, (float) (1.2 * s))));
-    g.drawRoundRect((int) left, (int) top, (int) width, (int) height,
-            (int) (7 * s), (int) (7 * s));
+    /**
+     * Satu lampu dengan tiang berbentuk L: dari lampu menyamping ke pojok rumput (bx, by), lalu ke luar (ox, oy)
+     * dan berakhir di dudukan bulat. Lampu diputar agar lampu merah ada di ujung yang menjauhi tiang.
+     */
+    private void drawSignal(Graphics2D g0, double x, double y, double bx, double by,
+                            int ox, int oy, Vehicle.Direction approach, double s) {
+        double width = 12 * s, height = 30 * s;   // ukuran kotak lampu (mobil = 25 x 48)
+        double radius = 3.3 * s;                  // jari-jari tiap lampu
+        double first = 6 * s, gap = 9 * s;        // posisi lampu pertama dan jarak antarlampu
 
-    Color[] active = {
-        isRed(approach) ? new Color(255, 65, 65) : new Color(86, 36, 39),
-        isYellow(approach) ? new Color(255, 207, 58) : new Color(83, 69, 37),
-        isGreen(approach) ? new Color(62, 235, 119) : new Color(34, 75, 49)
-    };
-    for (int i = 0; i < active.length; i++) {
-        double lampY = top + (12 + i * 16) * s;
-        g.setColor(active[i]);
-        g.fillOval((int) (-radius), (int) (lampY - radius),
-                (int) (radius * 2), (int) (radius * 2));
-        boolean lit = (i == 0 && isRed(approach))
-                || (i == 1 && isYellow(approach))
-                || (i == 2 && isGreen(approach));
-        if (lit) {
-            g.setColor(new Color(255, 255, 255, 105));
-            g.fillOval((int) (-radius * .48), (int) (lampY - radius * .62),
-                    (int) (radius * .62), (int) (radius * .42));
+        // Arah lengan tiang: dari lampu menuju (bx, by).
+        double ax = Math.signum(bx - x), ay = Math.signum(by - y);
+        double sx = x + ax * height / 2, sy = y + ay * height / 2;  // titik tiang keluar dari kotak lampu
+        double stub = 14 * s;                                         // panjang ujung tiang ke luar
+        double ex = bx + ox * stub, ey = by + oy * stub;
+        double br = Math.max(3, 4.5 * s);
+
+        Graphics2D m = (Graphics2D) g0.create();
+        m.setStroke(new BasicStroke(Math.max(2f, (float) (3 * s)), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        m.setColor(new Color(0, 0, 0, 55));                           // bayangan
+        m.draw(new java.awt.geom.Path2D.Double() {{ moveTo(sx + 2 * s, sy + 2 * s); lineTo(bx + 2 * s, by + 2 * s); lineTo(ex + 2 * s, ey + 2 * s); }});
+        m.setColor(new Color(78, 85, 93));                            // tiang
+        m.draw(new java.awt.geom.Path2D.Double() {{ moveTo(sx, sy); lineTo(bx, by); lineTo(ex, ey); }});
+        m.setColor(new Color(52, 58, 64));                            // dudukan
+        m.fill(new Ellipse2D.Double(ex - br, ey - br, br * 2, br * 2));
+        m.setColor(new Color(150, 158, 165));
+        m.setStroke(new BasicStroke(Math.max(0.8f, (float) (0.9 * s))));
+        m.draw(new Ellipse2D.Double(ex - br, ey - br, br * 2, br * 2));
+        m.dispose();
+
+        // Kotak lampu: merah -> kuning -> hijau searah lengan tiang (merah paling jauh dari tiang).
+        Graphics2D g = (Graphics2D) g0.create();
+        g.translate(x, y);
+        switch (approach) {
+            case NORTH: g.rotate(-Math.PI / 2); break;  // merah di kiri, hijau di kanan (dekat tiang)
+            case SOUTH: g.rotate(Math.PI / 2); break;   // merah di kanan, hijau di kiri
+            case WEST:  g.rotate(Math.PI); break;       // merah di bawah, hijau di atas
+            default: break;                              // EAST: merah di atas, hijau di bawah
+        }
+        double left = -width / 2, top = -height / 2;
+        g.setColor(new Color(17, 21, 25));
+        g.fillRoundRect((int) left, (int) top, (int) Math.ceil(width), (int) Math.ceil(height),
+                (int) (5 * s), (int) (5 * s));
+        g.setColor(new Color(92, 101, 108));
+        g.setStroke(new BasicStroke(Math.max(0.8f, (float) (1 * s))));
+        g.drawRoundRect((int) left, (int) top, (int) Math.ceil(width), (int) Math.ceil(height),
+                (int) (5 * s), (int) (5 * s));
+
+        Color[] active = {
+            isRed(approach) ? new Color(255, 65, 65) : new Color(86, 36, 39),
+            isYellow(approach) ? new Color(255, 207, 58) : new Color(83, 69, 37),
+            isGreen(approach) ? new Color(62, 235, 119) : new Color(34, 75, 49)
+        };
+        for (int i = 0; i < active.length; i++) {
+            double lampY = top + first + i * gap;
+            g.setColor(active[i]);
+            g.fillOval((int) (-radius), (int) (lampY - radius), (int) (radius * 2), (int) (radius * 2));
+            boolean lit = (i == 0 && isRed(approach))
+                    || (i == 1 && isYellow(approach))
+                    || (i == 2 && isGreen(approach));
+            if (lit) {
+                g.setColor(new Color(255, 255, 255, 105));
+                g.fillOval((int) (-radius * .48), (int) (lampY - radius * .62),
+                        (int) (radius * .62), (int) (radius * .42));
+            }
+        }
+        g.dispose();
+    }
+
+    /** Pembatas jalan (median) berumput dan berpohon di garis tengah tiap jalan, mulai di luar zebra cross sampai tepi layar. */
+    private void drawMedians(Graphics2D g, int w, int h, double cx, double cy, double half, double s) {
+        double t = 24 * s;            // lebar pembatas
+        double gap = half + 48 * s;   // jarak ujung dalam pembatas dari tengah simpang
+        double over = 40 * s;         // diperpanjang melewati tepi layar agar ujung luar tidak membulat
+        drawMedian(g, cx - t / 2, -over, t, (cy - gap) + over, true, true, s);              // utara
+        drawMedian(g, cx - t / 2, cy + gap, t, (h - (cy + gap)) + over, true, false, s);    // selatan
+        drawMedian(g, -over, cy - t / 2, (cx - gap) + over, t, false, true, s);             // barat
+        drawMedian(g, cx + gap, cy - t / 2, (w - (cx + gap)) + over, t, false, false, s);   // timur
+    }
+
+    /** @param innerAtMax true jika ujung dalam (dekat simpang) ada di koordinat terbesar (utara dan barat). */
+    private void drawMedian(Graphics2D g, double x, double y, double mw, double mh,
+                            boolean vertical, boolean innerAtMax, double s) {
+        double arc = Math.min(mw, mh);
+        java.awt.geom.RoundRectangle2D.Double shape = new java.awt.geom.RoundRectangle2D.Double(x, y, mw, mh, arc, arc);
+        g.setColor(new Color(92, 168, 62));                                   // rumput pembatas
+        g.fill(shape);
+        // Tepi trotoar: putih bergantian hitam.
+        g.setStroke(new BasicStroke(Math.max(2f, (float) (3 * s))));
+        g.setColor(new Color(235, 235, 225));
+        g.draw(shape);
+        g.setStroke(new BasicStroke(Math.max(2f, (float) (3 * s)), BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND,
+                10f, new float[]{(float) (5 * s), (float) (5 * s)}, 0f));
+        g.setColor(new Color(20, 20, 20));
+        g.draw(shape);
+
+        // Pohon-pohon di sepanjang pembatas, dihitung dari ujung dalam ke arah tepi layar.
+        double min = vertical ? y : x, len = vertical ? mh : mw;
+        double mid = vertical ? x + mw / 2 : y + mh / 2;
+        for (double d = 16 * s; d < len - 8 * s; d += 22 * s) {
+            double along = innerAtMax ? min + len - d : min + d;
+            double px = vertical ? mid : along, py = vertical ? along : mid;
+            double r = 8 * s;
+            g.setColor(new Color(40, 104, 38));
+            g.fill(new Ellipse2D.Double(px - r, py - r, 2 * r, 2 * r));
+            g.setColor(new Color(66, 140, 48));
+            g.fill(new Ellipse2D.Double(px - r * 0.75, py - r * 0.85, r * 1.1, r * 1.1));
+            g.fill(new Ellipse2D.Double(px - r * 0.15, py - r * 0.1, r * 0.95, r * 0.95));
+            g.setColor(new Color(110, 180, 70));
+            g.fill(new Ellipse2D.Double(px - r * 0.5, py - r * 0.6, r * 0.45, r * 0.45));
         }
     }
-    g.dispose();
-}
 
     private boolean isRed(Vehicle.Direction d) {
         return !isGreen(d) && !isYellow(d);

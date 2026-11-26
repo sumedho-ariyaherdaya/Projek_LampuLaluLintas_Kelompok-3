@@ -13,6 +13,7 @@ com\example\trafficlightsim\view\MetricsPanel.class
 com\example\trafficlightsim\service\LogPrinter.class
 com\example\trafficlightsim\view\InboxPanel$1.class
 com\example\trafficlightsim\controller\EmailController.class
+com\example\trafficlightsim\SimulationPanel$4.class
 com\example\trafficlightsim\CarSprites$SpritePair.class
 com\example\trafficlightsim\view\ControlBar.class
 com\example\trafficlightsim\view\TotalViolationCard.class
@@ -37,6 +38,7 @@ com\example\trafficlightsim\view\component\RowActionCell.class
 com\example\trafficlightsim\service\KendaraanService.class
 com\example\trafficlightsim\view\RecordListModel.class
 com\example\trafficlightsim\controller\ViolationController.class
+com\example\trafficlightsim\SimulationPanel$3.class
 com\example\trafficlightsim\view\component\RoundedPanel.class
 com\example\trafficlightsim\MusicPlayer.class
 com\example\trafficlightsim\model\JenisKendaraan.class
